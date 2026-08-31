@@ -1,0 +1,504 @@
+/* Add this at the top of the file */
+body {
+  border-color: rgb(159, 6, 11) !important; /* sky-200 color */
+}
+
+/* Remove unused classes: .App, .App-logo, .App-header */
+
+code {
+  background: rgba(186, 230, 253, 0.4);
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  color: #0369a1;
+}
+
+/* Dark mode support for code */
+@media (prefers-color-scheme: dark) {
+  code {
+    background: rgba(30, 58, 138, 0.4);
+    color: #7dd3fc;
+  }
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0ea5e9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0284c7;
+}
+
+/* Dark mode scrollbar */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-track {
+    background: #1e293b;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #0ea5e9;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #38bdf8;
+  }
+}
+
+/* Used classes from the component */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+/* Dark mode header border */
+@media (prefers-color-scheme: dark) {
+  .header {
+    background: rgba(15, 23, 42, 0.6);
+    border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  }
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+}
+
+.header-icons {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.header-icon {
+  color: #6366f1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.header-icon:hover {
+  color: #4f46e5;
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .header-icon {
+    color: #818cf8;
+  }
+  .header-icon:hover {
+    color: #a5b4fc;
+    background: rgba(129, 140, 248, 0.15);
+  }
+}
+
+.send-button {
+  color: #6366f1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  opacity: 0.85;
+}
+
+.send-button:hover {
+  color: #4f46e5;
+  opacity: 1;
+}
+
+.send-button:disabled {
+  color: #CBD5E1;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Add these styles to your existing CSS */
+.scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
+/* Optional: Style the scrollbar for webkit browsers */
+.scrollbar-gutter-stable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-gutter-stable::-webkit-scrollbar-track {
+  background: #f1f5f9;  /* sky-50 */
+}
+
+.scrollbar-gutter-stable::-webkit-scrollbar-thumb {
+  background: #7dd3fc;  /* sky-300 - very light blue */
+  border-radius: 4px;
+}
+
+.scrollbar-gutter-stable::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;  /* sky-400 - slightly darker on hover */
+}
+
+/* Dark mode scrollbar for scrollbar-gutter-stable */
+@media (prefers-color-scheme: dark) {
+  .scrollbar-gutter-stable::-webkit-scrollbar-track {
+    background: #1e293b;  /* slate-800 */
+  }
+  
+  .scrollbar-gutter-stable::-webkit-scrollbar-thumb {
+    background: #0ea5e9;  /* sky-500 */
+  }
+  
+  .scrollbar-gutter-stable::-webkit-scrollbar-thumb:hover {
+    background: #38bdf8;  /* sky-400 */
+  }
+}
+
+/* Dark mode text and background colors */
+@media (prefers-color-scheme: dark) {
+  .dark-mode-text {
+    color: #e2e8f0 !important; /* slate-200 */
+  }
+  
+  .dark-mode-bg {
+    background-color: #1e293b !important; /* slate-800 */
+  }
+  
+  .dark-mode-border {
+    border-color: #475569 !important; /* slate-600 */
+  }
+}
+
+/* Privacy Shield UI Styles */
+.privacy-shield-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.05);
+}
+
+.privacy-shield-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.45);
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  .privacy-shield-btn {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(52, 211, 153, 0.35);
+  }
+  .privacy-shield-btn:hover {
+    background: rgba(16, 185, 129, 0.25);
+    border-color: rgba(52, 211, 153, 0.5);
+  }
+}
+
+.pulse-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.privacy-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.privacy-modal-container {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  .privacy-modal-container {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc;
+  }
+}
+
+.privacy-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+@media (prefers-color-scheme: dark) {
+  .privacy-modal-header {
+    border-color: #1e293b;
+  }
+}
+
+.privacy-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.privacy-modal-title h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.privacy-subtitle {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.privacy-shield-icon.active {
+  color: #10b981;
+  font-size: 20px;
+}
+
+.privacy-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  display: flex;
+}
+
+.privacy-modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.privacy-status-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .privacy-status-card {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+}
+
+.status-indicator-dot.online {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.status-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+@media (prefers-color-scheme: dark) {
+  .status-label {
+    color: #4ade80;
+  }
+}
+
+.status-sub {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.shield-tag {
+  font-size: 10px;
+  background: #15803d;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.privacy-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.metric-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .metric-box {
+    background: #1e293b;
+    border-color: #334155;
+  }
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+  .metric-value {
+    color: #f8fafc;
+  }
+}
+
+.metric-name {
+  font-size: 9px;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+.privacy-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
+.filter-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  font-size: 10px;
+  color: #475569;
+}
+
+@media (prefers-color-scheme: dark) {
+  .filter-chip {
+    background: #1e293b;
+    color: #94a3b8;
+  }
+}
+
+.filter-chip .chip-icon {
+  font-size: 11px;
+  color: #10b981;
+}
+
+.filter-chip.detected {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.filter-chip .chip-icon.warn {
+  color: #dc2626;
+}
+
+.privacy-security-box {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .privacy-security-box {
+    background: #1e293b;
+    border-color: #334155;
+  }
+}
+
+.sec-icon {
+  font-size: 14px;
+  color: #6366f1;
+  margin-top: 2px;
+}
+
+.sec-text {
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.4;
+}
+

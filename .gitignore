@@ -1,0 +1,35 @@
+# dependencies
+**/node_modules
+**/.pnpm-store
+
+# testing
+**/coverage
+
+# build
+**/dist
+**/build
+**/dist-zip
+
+# binaries & installers
+*.exe
+*.msi
+*.bin
+
+# env
+**/.env
+**/.env.*
+!**/.env.example
+
+# logs & cache
+*.log
+**/.turbo
+.DS_Store
+.idea
+.vscode
+.cursor
+__pycache__/
+*.pyc
+
+# compiled
+chrome-extension/public/manifest.json
+**/tailwind-output.css
