@@ -1,11 +1,11 @@
-﻿/**
+/**
  * Vision Action Executor — Module 4
  *
  * Receives the action list returned by the ShieldBrowse server and
  * executes each action using the existing Puppeteer Page object.
  */
 
-import type { Page } from '../../../browser/context';
+import type Page from '../../browser/page';
 import { createLogger } from '../../log';
 import type { AgentAction } from '../../services/serverClient';
 

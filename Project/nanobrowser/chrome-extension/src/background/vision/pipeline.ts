@@ -170,6 +170,7 @@ export class VisionPipeline {
       // ── Step 9: Execute actions ───────────────────────────────────────────
       let executionResult: ExecutionResult | undefined;
       if (!skipExecution && serverResponse.actions.length > 0) {
+        const page = await this.browserContext.getCurrentPage();
         executionResult = await executeActions(serverResponse.actions, page);
         logger.info(
           `Executed ${executionResult.actionsSucceeded}/${executionResult.actionsAttempted} actions`,

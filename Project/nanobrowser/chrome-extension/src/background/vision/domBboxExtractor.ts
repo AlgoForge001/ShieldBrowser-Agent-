@@ -94,9 +94,9 @@ export function extractDomBboxes(): DomBbox[] {
   ];
 
   for (const { selector, type } of SENSITIVE_SELECTORS_INLINE) {
-    let elements: NodeListOf<Element>;
+    let elements: Element[] = [];
     try {
-      elements = document.querySelectorAll(selector);
+      elements = Array.from(document.querySelectorAll(selector));
     } catch {
       continue;
     }
