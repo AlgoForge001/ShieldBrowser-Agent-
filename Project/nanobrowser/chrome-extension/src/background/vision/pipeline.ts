@@ -246,20 +246,42 @@ export class VisionPipeline {
           const bodyText = document.body?.innerText?.slice(0, 3000) ?? '';
 
           // 2. Capture non-password interactive field values.
-          //    document.body.innerText never includes input .value — we must
-          //    read them explicitly. Password fields are intentionally skipped
-          //    (they are masked by the DOM bbox extractor separately).
           const fieldLines: string[] = [];
+          const passwordRegex = /(password|passwd|pwd|passcode|secret|pin|otp|cvv|cvc)/i;
           const inputs = document.querySelectorAll<HTMLInputElement>(
-            'input:not([type="password"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):not([type="checkbox"]):not([type="radio"])'
+            'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):not([type="checkbox"]):not([type="radio"])'
           );
           inputs.forEach(el => {
+            const type = (el.type || '').toLowerCase();
+            const name = (el.name || '').toLowerCase();
+            const id = (el.id || '').toLowerCase();
+            const placeholder = (el.placeholder || '').toLowerCase();
+            const autocomplete = (el.getAttribute('autocomplete') || '').toLowerCase();
+            const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
             const label =
               el.labels?.[0]?.innerText?.trim() ||
               el.getAttribute('placeholder') ||
               el.getAttribute('name') ||
               el.getAttribute('id') ||
               'field';
+
+            const isPass =
+              type === 'password' ||
+              passwordRegex.test(name) ||
+              passwordRegex.test(id) ||
+              passwordRegex.test(placeholder) ||
+              passwordRegex.test(ariaLabel) ||
+              passwordRegex.test(label) ||
+              autocomplete.includes('password') ||
+              autocomplete.includes('current-password') ||
+              autocomplete.includes('new-password') ||
+              autocomplete.includes('one-time-code');
+
+            if (isPass) {
+              fieldLines.push(`[INPUT "${label}"]: [MASKED_PASSWORD]`);
+              return;
+            }
+
             const val = el.value?.trim();
             if (val) {
               fieldLines.push(`[INPUT "${label}"]: ${val}`);

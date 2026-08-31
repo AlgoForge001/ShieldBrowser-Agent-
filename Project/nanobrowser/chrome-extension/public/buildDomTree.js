@@ -1382,7 +1382,29 @@ window.buildDomTree = (
       const tagNameLower = node.tagName.toLowerCase();
       if (tagNameLower === 'input') {
         const inputType = (node.type || '').toLowerCase();
-        if (inputType === 'password') {
+        const inputName = (node.name || node.getAttribute('name') || '').toLowerCase();
+        const inputId = (node.id || node.getAttribute('id') || '').toLowerCase();
+        const inputPlaceholder = (node.placeholder || node.getAttribute('placeholder') || '').toLowerCase();
+        const inputAria = (node.getAttribute('aria-label') || '').toLowerCase();
+        const inputAutocomplete = (node.getAttribute('autocomplete') || '').toLowerCase();
+        const inputClass = (node.className || '').toLowerCase();
+
+        // Password detection: covers type="password", eye-icon toggled fields (type="text"),
+        // and any field identified as password/secret/PIN/OTP/CVV.
+        const passwordRegex = /(password|passwd|pwd|passcode|secret|pin|otp|cvv|cvc)/i;
+        const isPassword =
+          inputType === 'password' ||
+          passwordRegex.test(inputName) ||
+          passwordRegex.test(inputId) ||
+          passwordRegex.test(inputPlaceholder) ||
+          passwordRegex.test(inputAria) ||
+          passwordRegex.test(inputClass) ||
+          inputAutocomplete.includes('password') ||
+          inputAutocomplete.includes('current-password') ||
+          inputAutocomplete.includes('new-password') ||
+          inputAutocomplete.includes('one-time-code');
+
+        if (isPassword) {
           nodeData.attributes['value'] = '[MASKED_PASSWORD]';
         } else if (node.value && typeof node.value === 'string' && node.value.trim() !== '') {
           nodeData.attributes['value'] = node.value;

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DOM Bounding Box Extractor — Module 1 (Strategy A)
  *
  * Queries the live page for sensitive DOM elements and returns their
@@ -21,7 +21,15 @@ export interface DomBbox {
  * Run inside the page context (content script / scripting.executeScript).
  */
 const SENSITIVE_SELECTORS: Array<{ selector: string; type: DomBbox['type'] }> = [
-  { selector: 'input[type="password"]', type: 'password' },
+  {
+    selector:
+      'input[type="password"], ' +
+      'input[name*="password" i], input[name*="passwd" i], input[name*="pwd" i], ' +
+      'input[id*="password" i], input[id*="passwd" i], input[id*="pwd" i], ' +
+      'input[placeholder*="password" i], input[placeholder*="pwd" i], ' +
+      'input[autocomplete*="password" i], input[aria-label*="password" i]',
+    type: 'password',
+  },
   {
     selector:
       'input[autocomplete*="cc-number"], input[autocomplete*="cc-csc"], ' +
