@@ -6,52 +6,53 @@ import { ChatXAI } from '@langchain/xai';
 import { ChatGroq } from '@langchain/groq';
 import { ChatCerebras } from '@langchain/cerebras';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { BaseMessage } from '@langchain/core/messages';
+import { AIMessage } from '@langchain/core/messages';
+import type { ChatResult } from '@langchain/core/outputs';
+import type { CallbackManagerForLLMRun } from '@langchain/core/callbacks/manager';
 import { ChatOllama } from '@langchain/ollama';
 import { ChatDeepSeek } from '@langchain/deepseek';
 
 const maxTokens = 1024;
 
 // Custom ChatLlama class to handle Llama API response format
+// Note: completionWithRetry was removed from ChatOpenAI's public API in @langchain/openai v0.5+.
+// We override _generate instead, which is the stable override point in BaseChatModel.
 class ChatLlama extends ChatOpenAI {
   constructor(args: any) {
     super(args);
   }
 
-  // Override the completionWithRetry method to intercept and transform the response
-  async completionWithRetry(request: any, options?: any): Promise<any> {
+  // Override _generate to intercept and normalize Llama API responses
+  async _generate(
+    messages: BaseMessage[],
+    options: this['ParsedCallOptions'],
+    runManager?: CallbackManagerForLLMRun,
+  ): Promise<ChatResult> {
     try {
-      // Make the request using the parent's implementation
-      const response = await super.completionWithRetry(request, options);
+      const result = await super._generate(messages, options, runManager);
 
-      // Check if this is a Llama API response format
-      if (response?.completion_message?.content?.text) {
-        // Transform Llama API response to OpenAI format
-        const transformedResponse = {
-          id: response.id || 'llama-response',
-          object: 'chat.completion',
-          created: Date.now(),
-          model: request.model,
-          choices: [
-            {
-              index: 0,
-              message: {
-                role: 'assistant',
-                content: response.completion_message.content.text,
-              },
-              finish_reason: response.completion_message.stop_reason || 'stop',
-            },
-          ],
-          usage: {
-            prompt_tokens: response.metrics?.find((m: any) => m.metric === 'num_prompt_tokens')?.value || 0,
-            completion_tokens: response.metrics?.find((m: any) => m.metric === 'num_completion_tokens')?.value || 0,
-            total_tokens: response.metrics?.find((m: any) => m.metric === 'num_total_tokens')?.value || 0,
-          },
-        };
+      // Normalize any Llama-specific content that surfaced as a raw object
+      const normalizedGenerations = result.generations.map(gen => {
+        const raw = gen.message as AIMessage;
+        // If the content is an object with Llama's completion_message shape, extract the text
+        if (
+          raw.content &&
+          typeof raw.content === 'object' &&
+          !Array.isArray(raw.content) &&
+          (raw.content as any)?.completion_message?.content?.text
+        ) {
+          const llamaContent = (raw.content as any).completion_message.content.text as string;
+          return {
+            ...gen,
+            text: llamaContent,
+            message: new AIMessage({ content: llamaContent }),
+          };
+        }
+        return gen;
+      });
 
-        return transformedResponse;
-      }
-
-      return response;
+      return { ...result, generations: normalizedGenerations };
     } catch (error: any) {
       console.error(`[ChatLlama] Error during API call:`, error);
       throw error;

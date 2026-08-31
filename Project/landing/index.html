@@ -745,6 +745,456 @@
       }
     }
 
+    /* DOWNLOAD BUTTON */
+    .btn-download {
+      position: relative;
+      padding: 11px 22px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.5);
+      background: linear-gradient(135deg, #4338ca, #4f46e5);
+    }
+    .btn-download .pulse-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: 12px;
+      border: 2px solid rgba(99, 102, 241, 0.5);
+      animation: pulseRing 2s ease-out infinite;
+      pointer-events: none;
+    }
+    /* Hero download button — larger */
+    .btn-download-hero {
+      padding: 15px 32px;
+      font-size: 1.05rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 24px rgba(79, 70, 229, 0.4);
+    }
+    .btn-download-hero:hover {
+      box-shadow: 0 12px 32px rgba(79, 70, 229, 0.55);
+    }
+
+    /* INSTALL MODAL */
+    .install-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.6);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .install-modal-overlay.open {
+      display: flex;
+    }
+    .install-modal {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 540px;
+      width: calc(100% - 40px);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.18);
+      position: relative;
+      animation: modalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .install-modal-close {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .install-modal-close:hover { background: var(--bg-subtle); }
+    .install-modal h3 {
+      font-family: var(--font-serif);
+      font-size: 1.75rem;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .install-modal > p {
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      font-size: 0.95rem;
+    }
+    .install-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .install-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--bg-subtle);
+      border-radius: 12px;
+      border: 1px solid var(--border-light);
+    }
+    .install-step-num {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: white;
+      font-weight: 700;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .install-step-text strong {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .install-step-text span {
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+    }
+    /* INSTALL WIZARD MODAL */
+    .wizard-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .wizard-overlay.open { display: flex; }
+
+    .wizard-card {
+      background: #ffffff;
+      border-radius: 28px;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0,0,0,0.04);
+      overflow: hidden;
+      animation: wizardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .wizard-header {
+      padding: 28px 32px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .wizard-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .wizard-logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(79,70,229,0.35);
+    }
+    .wizard-logo-name {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .wizard-logo-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .wizard-close {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      transition: all 0.15s;
+    }
+    .wizard-close:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
+
+    .wizard-steps-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 24px 32px 0;
+    }
+    .wizard-step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border-light);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.3s;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .wizard-step-dot.active {
+      border-color: #4f46e5;
+      background: #4f46e5;
+      color: white;
+      box-shadow: 0 0 0 4px rgba(79,70,229,0.15);
+    }
+    .wizard-step-dot.done {
+      border-color: #059669;
+      background: #059669;
+      color: white;
+    }
+    .wizard-step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border-light);
+      position: relative;
+      overflow: hidden;
+    }
+    .wizard-step-line-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #4f46e5, #059669);
+      transition: width 0.5s ease;
+    }
+
+    .wizard-body {
+      padding: 24px 32px 32px;
+    }
+    .wizard-pane { display: none; }
+    .wizard-pane.active { display: block; animation: fadeInUp 0.3s ease; }
+
+    /* Pane 1: Download */
+    .wizard-pane-title {
+      font-size: 1.5rem;
+      font-family: var(--font-serif);
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .wizard-pane-sub {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.55;
+    }
+    .dl-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .dl-file-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+    .dl-file-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+    .dl-file-size {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .dl-progress-track {
+      height: 5px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .dl-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4f46e5, #10b981);
+      border-radius: 3px;
+      transition: width 0.08s linear;
+    }
+    .dl-status {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-top: 4px;
+    }
+
+    /* Pane 2: Install Steps */
+    .install-checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .check-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-subtle);
+      border: 1.5px solid var(--border-light);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .check-step:hover { border-color: rgba(79,70,229,0.3); background: rgba(79,70,229,0.03); }
+    .check-step.checked { border-color: rgba(5,150,105,0.4); background: rgba(5,150,105,0.04); }
+    .check-box {
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      border-radius: 6px;
+      border: 2px solid var(--border-light);
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      margin-top: 1px;
+    }
+    .check-step.checked .check-box {
+      background: #059669;
+      border-color: #059669;
+      color: white;
+    }
+    .check-step-label strong {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .check-step-label span {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+    .check-step-label code {
+      background: rgba(79,70,229,0.1);
+      color: var(--accent-indigo);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+    }
+    .open-chrome-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      padding: 4px 10px 4px 6px;
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent-indigo);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .open-chrome-btn:hover { background: rgba(79,70,229,0.07); border-color: rgba(79,70,229,0.3); }
+
+    /* Pane 3: Done */
+    .wizard-done-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #059669, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      color: white;
+      font-size: 2rem;
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 8px 24px rgba(5,150,105,0.35);
+    }
+    .wizard-done-title {
+      font-family: var(--font-serif);
+      font-size: 1.7rem;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .wizard-done-sub {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+      line-height: 1.55;
+    }
+
+    /* Wizard Footer */
+    .wizard-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .wizard-footer-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .wizard-btns {
+      display: flex;
+      gap: 10px;
+    }
+
     /* KEYFRAMES */
     @keyframes fadeInUp {
       from {
@@ -771,6 +1221,20 @@
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(6px); }
+    }
+
+    @keyframes pulseRing {
+      0%   { transform: scale(1); opacity: 0.7; }
+      70%  { transform: scale(1.12); opacity: 0; }
+      100% { transform: scale(1.12); opacity: 0; }
+    }
+    @keyframes wizardIn {
+      from { opacity: 0; transform: scale(0.92) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
@@ -800,9 +1264,10 @@
       <a href="https://github.com/AlgoForge001/ShieldBrowser-Agent-" target="_blank" class="btn-ghost">
         GitHub
       </a>
-      <a href="#features" class="btn-primary btn-emerald">
-        <span>Explore Architecture</span>
-        <span>→</span>
+      <a href="ShieldBrowser-extension.zip" download="ShieldBrowser-extension.zip" class="btn-download" id="nav-download-btn" onclick="showInstallModal(event)">
+        <span class="pulse-ring"></span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Extension
       </a>
     </div>
   </header>
@@ -824,12 +1289,14 @@
     </p>
 
     <div class="hero-actions">
-      <a href="#particles-zone" class="btn-primary btn-emerald" style="padding: 14px 28px; font-size: 1rem;">
-        <span>Experience Particle Perception</span>
-        <span>↓</span>
+      <a href="ShieldBrowser-extension.zip" download="ShieldBrowser-extension.zip" class="btn-download btn-download-hero" id="hero-download-btn" onclick="showInstallModal(event)">
+        <span class="pulse-ring"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Download Extension</span>
       </a>
-      <a href="#features" class="btn-ghost" style="padding: 14px 24px; font-size: 1rem;">
-        <span>System Architecture</span>
+      <a href="#particles-zone" class="btn-primary btn-emerald" style="padding: 15px 28px; font-size: 1rem;">
+        <span>See It In Action</span>
+        <span>↓</span>
       </a>
     </div>
 
@@ -1045,14 +1512,147 @@
       <p>
         Deploy the extension locally and automate high-stakes web tasks with confidence and zero sensitive data exposure.
       </p>
-      <div style="display: flex; justify-content: center; gap: 16px;">
-        <a href="https://github.com/AlgoForge001/ShieldBrowser-Agent-" target="_blank" class="btn-primary btn-emerald" style="padding: 14px 32px; font-size: 1rem;">
-          <span>Explore Source on GitHub</span>
-          <span>↗</span>
+      <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <a href="ShieldBrowser-extension.zip" download="ShieldBrowser-extension.zip" class="btn-download" style="padding: 15px 36px; font-size: 1.05rem;" onclick="showInstallModal(event)">
+          <span class="pulse-ring"></span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download Extension (.zip)</span>
+        </a>
+        <a href="https://github.com/AlgoForge001/ShieldBrowser-Agent-" target="_blank" class="btn-ghost" style="padding: 14px 24px; font-size: 1rem;">
+          <span>Source Code ↗</span>
         </a>
       </div>
     </div>
   </section>
+
+  <!-- INSTALL WIZARD MODAL -->
+  <div class="wizard-overlay" id="installWizard" onclick="wizardOverlayClick(event)">
+    <div class="wizard-card">
+      <!-- Header -->
+      <div class="wizard-header">
+        <div class="wizard-logo">
+          <div class="wizard-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <div class="wizard-logo-name">ShieldBrowser</div>
+            <div class="wizard-logo-sub">Chrome Extension Installer</div>
+          </div>
+        </div>
+        <button class="wizard-close" onclick="closeWizard()" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Step Track -->
+      <div class="wizard-steps-track" id="wizStepsTrack">
+        <div class="wizard-step-dot active" id="wsd1">1</div>
+        <div class="wizard-step-line"><div class="wizard-step-line-fill" id="wsl1"></div></div>
+        <div class="wizard-step-dot" id="wsd2">2</div>
+        <div class="wizard-step-line"><div class="wizard-step-line-fill" id="wsl2"></div></div>
+        <div class="wizard-step-dot" id="wsd3">✓</div>
+      </div>
+
+      <!-- Body -->
+      <div class="wizard-body">
+
+        <!-- Pane 1: Download -->
+        <div class="wizard-pane active" id="wpane1">
+          <div class="wizard-pane-title">Downloading Extension</div>
+          <div class="wizard-pane-sub">Your download is starting automatically. Save the file and continue to installation.</div>
+          <div class="dl-card">
+            <div class="dl-file-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div style="flex:1">
+              <div class="dl-file-name">ShieldBrowser-extension.zip</div>
+              <div class="dl-file-size">~0.9 MB • Chrome Extension Package</div>
+              <div class="dl-progress-track"><div class="dl-progress-fill" id="dlProgress"></div></div>
+              <div class="dl-status" id="dlStatus">Starting download...</div>
+            </div>
+          </div>
+          <div class="wizard-footer">
+            <div class="wizard-footer-note">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              No account required
+            </div>
+            <div class="wizard-btns">
+              <button class="btn-ghost" style="cursor:pointer; padding:8px 16px; font-size:0.88rem;" onclick="closeWizard()">Cancel</button>
+              <button class="btn-primary" style="cursor:pointer; padding:9px 20px; font-size:0.88rem; background:#4f46e5; border:none;" onclick="goToStep(2)" id="nextBtn1">Next: Install Steps →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 2: Install Steps -->
+        <div class="wizard-pane" id="wpane2">
+          <div class="wizard-pane-title">Install the Extension</div>
+          <div class="wizard-pane-sub">Tick each step as you complete it. The extension will appear in your Chrome toolbar.</div>
+          <div class="install-checklist" id="checkList">
+
+            <div class="check-step" id="cs1" onclick="toggleCheck(1)">
+              <div class="check-box" id="cb1"></div>
+              <div class="check-step-label">
+                <strong>Unzip the downloaded file</strong>
+                <span>Right-click <code>ShieldBrowser-extension.zip</code> → "Extract All" (Windows) or double-click (Mac).</span>
+              </div>
+            </div>
+
+            <div class="check-step" id="cs2" onclick="toggleCheck(2)">
+              <div class="check-box" id="cb2"></div>
+              <div class="check-step-label">
+                <strong>Open Chrome Extensions page</strong>
+                <span>Click the button below or type <code>chrome://extensions</code> in your address bar.</span>
+                <br/>
+                <a class="open-chrome-btn" href="chrome://extensions" target="_blank" onclick="toggleCheck(2)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Open chrome://extensions
+                </a>
+              </div>
+            </div>
+
+            <div class="check-step" id="cs3" onclick="toggleCheck(3)">
+              <div class="check-box" id="cb3"></div>
+              <div class="check-step-label">
+                <strong>Enable Developer Mode</strong>
+                <span>Toggle <code>Developer mode</code> switch in the top-right corner of that page.</span>
+              </div>
+            </div>
+
+            <div class="check-step" id="cs4" onclick="toggleCheck(4)">
+              <div class="check-box" id="cb4"></div>
+              <div class="check-step-label">
+                <strong>Load Unpacked Extension</strong>
+                <span>Click <code>Load unpacked</code> → select the extracted <code>ShieldBrowser</code> folder.</span>
+              </div>
+            </div>
+
+          </div>
+          <div class="wizard-footer">
+            <div class="wizard-footer-note">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Chromium-based browsers supported
+            </div>
+            <div class="wizard-btns">
+              <button class="btn-ghost" style="cursor:pointer; padding:8px 16px; font-size:0.88rem;" onclick="goToStep(1)">← Back</button>
+              <button class="btn-primary" style="cursor:pointer; padding:9px 20px; font-size:0.88rem; background:#059669; border:none;" onclick="goToStep(3)" id="nextBtn2">Done! →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pane 3: Done -->
+        <div class="wizard-pane" id="wpane3">
+          <div style="padding: 16px 0 8px;">
+            <div class="wizard-done-icon">🛡️</div>
+            <div class="wizard-done-title">ShieldBrowser is Active!</div>
+            <div class="wizard-done-sub">The extension is now protecting your browser. Click the ShieldBrowser icon in your toolbar to start your first private session.</div>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+              <button class="btn-primary btn-emerald" style="cursor:pointer; border:none; padding:11px 24px; font-size:0.9rem;" onclick="closeWizard()">Start Browsing Privately</button>
+              <a href="https://github.com/AlgoForge001/ShieldBrowser-Agent-" target="_blank" class="btn-ghost" style="padding:10px 20px; font-size:0.88rem;">View Docs ↗</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer class="footer">
@@ -1063,6 +1663,90 @@
       Smart India Hackathon 2026 • Team The DOMinators
     </div>
   </footer>
+
+  <!-- INSTALL WIZARD SCRIPT -->
+  <script>
+    // --- State ---
+    let currentStep = 1;
+    let dlInterval = null;
+    let dlValue = 0;
+    const checkStates = { 1: false, 2: false, 3: false, 4: false };
+
+    // --- Open wizard & trigger download ---
+    function showInstallModal(e) {
+      document.getElementById('installWizard').classList.add('open');
+      currentStep = 1;
+      renderStep();
+      startDlAnimation();
+    }
+
+    function closeWizard() {
+      document.getElementById('installWizard').classList.remove('open');
+      stopDlAnimation();
+    }
+
+    function wizardOverlayClick(e) {
+      if (e.target === document.getElementById('installWizard')) closeWizard();
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeWizard();
+    });
+
+    // --- Step Navigation ---
+    function goToStep(n) {
+      currentStep = n;
+      renderStep();
+      if (n === 2) stopDlAnimation();
+    }
+
+    function renderStep() {
+      // Panes
+      [1,2,3].forEach(i => {
+        document.getElementById('wpane' + i).classList.toggle('active', i === currentStep);
+      });
+      // Step dots
+      const dots = [document.getElementById('wsd1'), document.getElementById('wsd2'), document.getElementById('wsd3')];
+      const lines = [document.getElementById('wsl1'), document.getElementById('wsl2')];
+      dots.forEach((d, i) => {
+        d.classList.remove('active', 'done');
+        if (i + 1 < currentStep) d.classList.add('done');
+        else if (i + 1 === currentStep) d.classList.add('active');
+      });
+      lines[0].style.width = currentStep > 1 ? '100%' : '0%';
+      lines[1].style.width = currentStep > 2 ? '100%' : '0%';
+    }
+
+    // --- Download animation ---
+    function startDlAnimation() {
+      dlValue = 0;
+      clearInterval(dlInterval);
+      const fill = document.getElementById('dlProgress');
+      const status = document.getElementById('dlStatus');
+      fill.style.width = '0%';
+      status.textContent = 'Starting download...';
+      // Animate to ~90% quickly, then slow down (realistic feel)
+      dlInterval = setInterval(() => {
+        if (dlValue < 90) dlValue += (Math.random() * 8);
+        else if (dlValue < 99) dlValue += 0.3;
+        else { dlValue = 100; clearInterval(dlInterval); status.textContent = '✓ Download complete — 0.9 MB'; }
+        fill.style.width = Math.min(dlValue, 100) + '%';
+        if (dlValue < 100) status.textContent = 'Downloading... ' + Math.floor(Math.min(dlValue, 99)) + '%';
+      }, 80);
+    }
+    function stopDlAnimation() { clearInterval(dlInterval); }
+
+    // --- Checklist ---
+    function toggleCheck(n) {
+      checkStates[n] = !checkStates[n];
+      const step = document.getElementById('cs' + n);
+      const box = document.getElementById('cb' + n);
+      step.classList.toggle('checked', checkStates[n]);
+      box.innerHTML = checkStates[n]
+        ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '';
+    }
+  </script>
 
   <!-- PARTICLE CANVAS PHYSICS ENGINE SCRIPT -->
   <script>
