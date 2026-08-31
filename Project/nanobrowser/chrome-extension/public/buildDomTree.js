@@ -1377,6 +1377,28 @@ window.buildDomTree = (
         const value = node.getAttribute(name);
         nodeData.attributes[name] = value;
       }
+
+      // Dynamic form field values (live DOM properties that getAttribute misses)
+      const tagNameLower = node.tagName.toLowerCase();
+      if (tagNameLower === 'input') {
+        const inputType = (node.type || '').toLowerCase();
+        if (inputType === 'password') {
+          nodeData.attributes['value'] = '[MASKED_PASSWORD]';
+        } else if (node.value && typeof node.value === 'string' && node.value.trim() !== '') {
+          nodeData.attributes['value'] = node.value;
+        }
+      } else if (tagNameLower === 'textarea') {
+        if (node.value && typeof node.value === 'string' && node.value.trim() !== '') {
+          nodeData.attributes['value'] = node.value;
+        }
+      } else if (tagNameLower === 'select') {
+        const selectedText = node.options?.[node.selectedIndex]?.text?.trim();
+        if (selectedText) {
+          nodeData.attributes['value'] = selectedText;
+        } else if (node.value) {
+          nodeData.attributes['value'] = node.value;
+        }
+      }
     }
 
     let nodeWasHighlighted = false;

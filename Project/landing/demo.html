@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>National Digital KYC & Banking Portal (Mock Demo)</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --accent: #2563eb;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+    
+    /* Top Bar */
+    .top-header {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 8px 24px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .gov-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .gov-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    /* Main Navigation */
+    .navbar {
+      background: #ffffff;
+      border-bottom: 2px solid #e2e8f0;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+    }
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #1e293b;
+    }
+    .brand-sub {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    /* Demo Banner */
+    .demo-banner {
+      background: linear-gradient(90deg, #312e81, #4338ca);
+      color: white;
+      padding: 12px 24px;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .demo-banner strong {
+      color: #a5b4fc;
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1000px;
+      margin: 32px auto;
+      padding: 0 20px;
+    }
+
+    .kyc-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 28px;
+    }
+    @media (max-width: 860px) {
+      .kyc-grid { grid-template-columns: 1fr; }
+    }
+
+    .form-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .form-card h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    .form-card p {
+      color: #64748b;
+      font-size: 0.88rem;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: monospace;
+      color: #0f172a;
+      background: #f8fafc;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ID Preview Card */
+    .id-preview-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      height: fit-content;
+    }
+    .id-preview-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+    }
+
+    .aadhaar-box {
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, #fff7ed 0%, #ffffff 40%, #f0fdf4 100%);
+    }
+    .aadhaar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid #f97316;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+    .aadhaar-logo {
+      font-weight: 800;
+      font-size: 0.8rem;
+      color: #c2410c;
+    }
+    .aadhaar-body {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .aadhaar-photo {
+      width: 64px;
+      height: 74px;
+      background: #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #cbd5e1;
+    }
+    .aadhaar-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .aadhaar-info {
+      font-size: 0.8rem;
+    }
+    .aadhaar-info strong {
+      display: block;
+      font-size: 0.85rem;
+      color: #1e293b;
+    }
+    .aadhaar-num {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #1e293b;
+      background: #f8fafc;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px dashed #cbd5e1;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .btn-submit:hover {
+      background: #1e40af;
+    }
+
+    /* Live Judge Test Box */
+    .judge-test-card {
+      background: #0f172a;
+      color: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 24px;
+      border: 1px solid #334155;
+    }
+    .judge-test-card h3 {
+      font-size: 1.1rem;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .judge-test-card p {
+      font-size: 0.88rem;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .prompt-snippet {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .prompt-snippet:hover {
+      border-color: #60a5fa;
+    }
+    .copy-tag {
+      font-size: 0.72rem;
+      background: #334155;
+      color: #e2e8f0;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-header">
+    <div class="gov-badge">
+      <span class="gov-dot"></span>
+      <span>Mock High-Security Govt Portal • SIH 2026 Test Suite</span>
+    </div>
+    <div>Strict PII Protected Sandbox</div>
+  </div>
+
+  <div class="navbar">
+    <div class="brand">
+      <div class="brand-logo">₹</div>
+      <div>
+        <div class="brand-title">DigiKosh & Identity Verification Portal</div>
+        <div class="brand-sub">Ministry of Electronics & Information Technology (Simulation)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-banner">
+    🎯 <strong>JUDGES DEMO BENCHMARK:</strong> Open <strong>ShieldBrowser Extension</strong> on this page to test instant on-device PII masking.
+  </div>
+
+  <div class="container">
+    <div class="kyc-grid">
+
+      <!-- Form Section -->
+      <div class="form-card">
+        <h2>Beneficiary Registration & KYC</h2>
+        <p>This form contains high-stakes sensitive PII (Aadhaar, PAN, Bank Details & Password).</p>
+
+        <form id="kycForm" onsubmit="event.preventDefault();">
+          <div class="row-2">
+            <div class="form-group">
+              <label>Applicant Full Name</label>
+              <input type="text" value="Rahul Sharma" />
+            </div>
+            <div class="form-group">
+              <label>Phone Number (Linked to Aadhaar)</label>
+              <input type="text" name="phone" value="+91 9876543210" />
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="form-group">
+              <label>Aadhaar Number (12 Digits)</label>
+              <input type="text" name="aadhaar" value="5482 1234 5678" />
+            </div>
+            <div class="form-group">
+              <label>Permanent Account Number (PAN)</label>
+              <input type="text" name="pan" value="ABCDE1234F" />
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="form-group">
+              <label>Bank Account Number</label>
+              <input type="text" name="bank_account" value="987654321098" />
+            </div>
+            <div class="form-group">
+              <label>IFSC Code</label>
+              <input type="text" name="ifsc" value="SBIN0001234" />
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="form-group">
+              <label>UPI ID (VPA)</label>
+              <input type="text" name="upi" value="rahul.sharma@okaxis" />
+            </div>
+            <div class="form-group">
+              <label>Net Banking Password</label>
+              <input type="password" name="password" value="SecretGovPass@2026" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Current OTP</label>
+            <input type="text" name="otp" value="849201" style="max-width: 160px; text-align: center; letter-spacing: 4px; font-weight: bold;" />
+          </div>
+
+          <button class="btn-submit" type="button">Submit KYC Application</button>
+        </form>
+      </div>
+
+      <!-- Identity Card Preview -->
+      <div class="id-preview-card">
+        <h3>Verified Digital ID</h3>
+
+        <div class="aadhaar-box">
+          <div class="aadhaar-header">
+            <div class="aadhaar-logo">मेरा आधार, मेरी पहचान</div>
+            <div style="font-size:0.7rem; color:#64748b;">Govt. of India</div>
+          </div>
+
+          <div class="aadhaar-body">
+            <div class="aadhaar-photo">
+              <!-- SVG Face Placeholder -->
+              <svg viewBox="0 0 100 120" style="width:100%; height:100%; background:#e0e7ff;">
+                <circle cx="50" cy="40" r="22" fill="#818cf8"/>
+                <path d="M20,100 C20,70 80,70 80,100 Z" fill="#6366f1"/>
+                <circle cx="42" cy="38" r="3" fill="#ffffff"/>
+                <circle cx="58" cy="38" r="3" fill="#ffffff"/>
+                <path d="M44,48 Q50,54 56,48" stroke="#ffffff" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+            <div class="aadhaar-info">
+              <strong>Rahul Sharma</strong>
+              <div style="color:#475569; font-size:0.75rem;">DOB: 15/08/1995</div>
+              <div style="color:#475569; font-size:0.75rem;">Gender: Male</div>
+            </div>
+          </div>
+
+          <div class="aadhaar-num">
+            5482 1234 5678
+          </div>
+        </div>
+
+        <div style="font-size:0.75rem; color:#64748b; line-height:1.4;">
+          🔒 <strong>Test Criteria:</strong> When ShieldBrowser inspects this page, it must mask the face photo, redact the Aadhaar number, and strip PAN and password fields before sending to cloud reasoning.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Judge Instructions Card -->
+    <div class="judge-test-card">
+      <h3>🏆 30-Second Demonstration Script for Judges</h3>
+      <p>
+        1. Open this page in Google Chrome with the <strong>ShieldBrowser Extension</strong> installed.<br />
+        2. Click on the <strong>ShieldBrowser Side Panel</strong>.<br />
+        3. Copy and paste the prompt below and press <strong>Run</strong>:
+      </p>
+
+      <div class="prompt-snippet" onclick="copyPrompt()">
+        <span id="promptText">Inspect this KYC page and summarize the user details and account information filled in the form.</span>
+        <span class="copy-tag" id="copyBadge">Click to Copy</span>
+      </div>
+
+      <p style="margin-top:16px; margin-bottom:0; font-size:0.82rem; color:#cbd5e1;">
+        ✨ <strong>What Judges Will See:</strong> The AI Agent will complete the task, but its response will show <code>[REDACTED-AADHAAR]</code>, <code>[REDACTED-PAN]</code>, and <code>[REDACTED-PHONE]</code>. The password will be completely hidden, proving zero cloud leakage in real-time!
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    function copyPrompt() {
+      const text = document.getElementById('promptText').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const badge = document.getElementById('copyBadge');
+        badge.innerText = 'Copied! ✓';
+        badge.style.background = '#10b981';
+        setTimeout(() => {
+          badge.innerText = 'Click to Copy';
+          badge.style.background = '#334155';
+        }, 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>

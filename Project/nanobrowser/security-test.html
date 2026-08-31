@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ShieldBrowser — Security Feature Tester</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d2e;
+      --border: #2d3155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --indigo: #6366f1;
+      --emerald: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 32px 24px;
+    }
+    h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; }
+    h1 span { color: var(--indigo); }
+    .subtitle { color: var(--muted); margin-bottom: 32px; font-size: 0.95rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .card p { font-size: 0.82rem; color: var(--muted); margin-bottom: 14px; }
+    textarea, input[type=text] {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      font-family: 'Consolas', monospace;
+      resize: vertical;
+      margin-bottom: 10px;
+      min-height: 80px;
+    }
+    input[type=text] { min-height: unset; }
+    button {
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-run { background: var(--indigo); color: white; }
+    .btn-run:hover { background: #4f46e5; }
+    .output {
+      margin-top: 12px;
+      padding: 12px;
+      background: #090d15;
+      border-radius: 8px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      min-height: 48px;
+      word-break: break-word;
+      border-left: 3px solid var(--border);
+    }
+    .pass { color: var(--emerald); }
+    .fail { color: var(--red); }
+    .warn { color: var(--yellow); }
+    .tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin: 2px;
+    }
+    .tag-red { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .tag-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .tag-indigo { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+    .results-banner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+    .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .divider { width: 1px; height: 40px; background: var(--border); }
+    #runAll {
+      background: linear-gradient(135deg, var(--indigo), #8b5cf6);
+      color: white;
+      padding: 12px 28px;
+      font-size: 0.95rem;
+      border-radius: 10px;
+    }
+    #runAll:hover { opacity: 0.9; }
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<h1><span>ShieldBrowser</span> — Security Feature Tester</h1>
+<p class="subtitle">Test privacy features directly in the browser. No server needed.</p>
+
+<div class="results-banner" id="summary">
+  <div class="stat"><div class="stat-num" id="totalTests" style="color:var(--muted)">0</div><div class="stat-label">Tests</div></div>
+  <div class="divider"></div>
+  <div class="stat"><div class="stat-num" id="passCount" style="color:var(--emerald)">0</div><div class="stat-label">Passed</div></div>
+  <div class="divider"></div>
+  <div class="stat"><div class="stat-num" id="failCount" style="color:var(--red)">0</div><div class="stat-label">Failed</div></div>
+  <div style="flex:1"></div>
+  <button id="runAll" onclick="runAllTests()">▶ Run All Tests</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<p class="section-title">1. PII Text Redaction Engine</p>
+<div class="grid">
+
+  <!-- Aadhaar -->
+  <div class="card">
+    <h2>🛡️ Aadhaar Detection</h2>
+    <p>Paste any text with an Aadhaar number and verify it gets redacted.</p>
+    <textarea id="aadhaarInput">My aadhaar is 5482 1234 5678 and I am an Indian citizen.</textarea>
+    <button class="btn-run" onclick="testAadhaar()">Run Test</button>
+    <div class="output" id="aadhaarOut">Click "Run Test" to see output</div>
+  </div>
+
+  <!-- PAN -->
+  <div class="card">
+    <h2>🛡️ PAN Card Detection</h2>
+    <p>Tests Indian PAN card format: 5 letters + 4 digits + 1 letter.</p>
+    <textarea id="panInput">Filing ITR with PAN ABCDE1234F this year. Also ZYXWV9876A is another PAN.</textarea>
+    <button class="btn-run" onclick="testPAN()">Run Test</button>
+    <div class="output" id="panOut">Click "Run Test" to see output</div>
+  </div>
+
+  <!-- Phone + Email -->
+  <div class="card">
+    <h2>🛡️ Phone & Email Detection</h2>
+    <p>Tests Indian phone (+91 prefix / 10-digit) and email addresses.</p>
+    <textarea id="contactInput">Call +91 9876543210 or email user.name@domain.com for support.</textarea>
+    <button class="btn-run" onclick="testContact()">Run Test</button>
+    <div class="output" id="contactOut">Click "Run Test" to see output</div>
+  </div>
+
+  <!-- UPI / IFSC / Credit Card -->
+  <div class="card">
+    <h2>🛡️ UPI / IFSC / Credit Card</h2>
+    <p>Tests financial identifiers: UPI IDs, IFSC codes, and card numbers.</p>
+    <textarea id="finInput">UPI: john@paytm | IFSC: SBIN0001234 | Card: 4111 2222 3333 4444</textarea>
+    <button class="btn-run" onclick="testFinancial()">Run Test</button>
+    <div class="output" id="finOut">Click "Run Test" to see output</div>
+  </div>
+
+  <!-- URL Redaction -->
+  <div class="card">
+    <h2>🛡️ URL Query Parameter Redaction</h2>
+    <p>Tests that PII in URL query strings is stripped before sending to LLM.</p>
+    <input type="text" id="urlInput" value="https://portal.gov.in/kyc?pan=ABCDE1234F&email=john@test.com&phone=9876543210" />
+    <button class="btn-run" onclick="testUrl()">Run Test</button>
+    <div class="output" id="urlOut">Click "Run Test" to see output</div>
+  </div>
+
+  <!-- Safe text -->
+  <div class="card">
+    <h2>✅ Safe Text — No False Positives</h2>
+    <p>Verifies that normal text (names, addresses) is NOT wrongly flagged.</p>
+    <textarea id="safeInput">Hello, my name is Rahul Sharma. I live at 42, MG Road, Bangalore.</textarea>
+    <button class="btn-run" onclick="testSafe()">Run Test</button>
+    <div class="output" id="safeOut">Click "Run Test" to see output</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<p class="section-title">2. Heuristic Screen Classifier</p>
+<div class="grid">
+
+  <div class="card">
+    <h2>⚡ Classify Page by URL</h2>
+    <p>Tests the 0ms heuristic that classifies a page as financial, identity, healthcare etc.</p>
+    <input type="text" id="classifyUrl" value="https://www.onlinesbi.sbi.co.in/sbijava/index.html" />
+    <textarea id="classifyDom" style="min-height:60px;">Account balance | Net Banking | IFSC Code</textarea>
+    <button class="btn-run" onclick="testClassify()">Classify</button>
+    <div class="output" id="classifyOut">Click "Classify" to see output</div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ Classify — Identity / KYC Page</h2>
+    <p>Tests detection of Aadhaar / KYC / government identity pages.</p>
+    <input type="text" id="classifyUrl2" value="https://myaadhaar.uidai.gov.in/verify-aadhaar" />
+    <textarea id="classifyDom2" style="min-height:60px;">Enter your Aadhaar number for KYC verification. Date of Birth required.</textarea>
+    <button class="btn-run" onclick="testClassify2()">Classify</button>
+    <div class="output" id="classifyOut2">Click "Classify" to see output</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<p class="section-title">3. Custom Test</p>
+<div class="card" style="margin-bottom:32px;">
+  <h2>🔧 Custom PII Test</h2>
+  <p>Enter any text and see what PII is detected and how it's redacted.</p>
+  <textarea id="customInput" style="min-height:120px;">Type any text here... try: Voter ID KLL1234567, DOB: 15/08/1990, Driving License MH-02 20110012345</textarea>
+  <button class="btn-run" onclick="testCustom()">Detect & Redact</button>
+  <div class="output" id="customOut">Enter text and click "Detect & Redact"</div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// Inline PII Engine (mirrors piiDetector.ts exactly)
+// ════════════════════════════════════════════════════
+
+const PII_PATTERNS = [
+  { type: 'AADHAAR',       pattern: /\b[2-9]\d{3}[\s\-]?\d{4}[\s\-]?\d{4}\b/g },
+  { type: 'PAN',           pattern: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g },
+  { type: 'PASSPORT',      pattern: /\b[A-PR-WYa-pr-wy][1-9]\d\s?\d{4}[1-9]\b/g },
+  { type: 'VOTER_ID',      pattern: /\b[A-Z]{3}[0-9]{7}\b/g },
+  { type: 'DRIVING_LICENSE', pattern: /\b(DL|MH|KA|TN|AP|UP|GJ|RJ|HR|MP|WB|PB|KL|OD|AS|BR|JH|CG|UK|HP|JK|GA|MN|ML|MZ|NL|SK|TR|AR|DN|DD|LD|CH|PY|AN)-?\d{2}[\s-]?\d{11}\b/gi },
+  { type: 'PHONE',         pattern: /(?:\+91[\s\-]?|0)?[6-9]\d{9}\b/g },
+  { type: 'EMAIL',         pattern: /\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g },
+  { type: 'CREDIT_CARD',   pattern: /\b(?:\d{4}[\s\-]?){3}\d{4}\b/g },
+  { type: 'BANK_ACCOUNT',  pattern: /\b\d{9,18}\b/g },
+  { type: 'IFSC',          pattern: /\b[A-Z]{4}0[A-Z0-9]{6}\b/g },
+  { type: 'UPI_ID',        pattern: /\b[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}\b/g },
+  { type: 'IPV4',          pattern: /\b(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g },
+  { type: 'DATE_OF_BIRTH', pattern: /\b(?:\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/g },
+];
+
+const TYPE_PRIORITY = { PAN:10, PASSPORT:10, VOTER_ID:10, DRIVING_LICENSE:10, EMAIL:10, UPI_ID:9, CREDIT_CARD:8, AADHAAR:7, PHONE:6, IFSC:5, IPV4:5, DATE_OF_BIRTH:4, BANK_ACCOUNT:1 };
+
+function detectPii(text) {
+  if (!text || !text.trim()) return { hasPii: false, matches: [], piiTypes: [] };
+  const allMatches = [];
+  for (const { type, pattern } of PII_PATTERNS) {
+    pattern.lastIndex = 0;
+    let m;
+    while ((m = pattern.exec(text)) !== null) {
+      if (type === 'BANK_ACCOUNT' && m[0].length < 10) continue;
+      allMatches.push({ type, value: m[0], start: m.index, end: m.index + m[0].length, redactedWith: `[REDACTED-${type}]` });
+    }
+  }
+  allMatches.sort((a, b) => {
+    const ld = (b.end - b.start) - (a.end - a.start);
+    if (ld !== 0) return ld;
+    return (TYPE_PRIORITY[b.type] ?? 0) - (TYPE_PRIORITY[a.type] ?? 0);
+  });
+  const nonOverlap = [];
+  for (const m of allMatches) {
+    if (!nonOverlap.some(e => m.start < e.end && m.end > e.start)) nonOverlap.push(m);
+  }
+  nonOverlap.sort((a, b) => a.start - b.start);
+  return { hasPii: nonOverlap.length > 0, matches: nonOverlap, piiTypes: [...new Set(nonOverlap.map(m => m.type))] };
+}
+
+function redactText(text) {
+  const result = detectPii(text);
+  if (!result.hasPii) return { original: text, redacted: text, wasRedacted: false, piiTypes: [] };
+  const matches = [...result.matches].sort((a, b) => b.start - a.start);
+  let redacted = text;
+  const seen = [];
+  for (const m of matches) {
+    if (seen.some(r => m.start < r.end && m.end > r.start)) continue;
+    redacted = redacted.slice(0, m.start) + m.redactedWith + redacted.slice(m.end);
+    seen.push({ start: m.start, end: m.end });
+  }
+  return { original: text, redacted, wasRedacted: true, piiTypes: result.piiTypes, matches: result.matches };
+}
+
+function redactUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const newParams = new URLSearchParams();
+    parsed.searchParams.forEach((v, k) => newParams.set(k, redactText(v).redacted));
+    parsed.search = newParams.toString() ? `?${newParams.toString()}` : '';
+    parsed.pathname = redactText(parsed.pathname).redacted;
+    return parsed.toString();
+  } catch { return redactText(url).redacted; }
+}
+
+// ════════════════════════════════════════════════════
+// Heuristic Classifier (mirrors heuristicClassifier.ts)
+// ════════════════════════════════════════════════════
+
+const FINANCIAL_URL = /\b(sbi|hdfc|icici|axis|kotak|paytm|phonepe|gpay|razorpay|npci|netbanking|creditcard|debitcard|loan|emi|neft|rtgs|upi|mutual.?fund|zerodha|groww|angelone|bajajfinserv|rbl|yes.?bank|iob|canara|pnb|bob|boi|union.?bank)\b/i;
+const FINANCIAL_DOM = /\b(account.?balance|net.?banking|fund.?transfer|transaction.?history|credit.?card.?number|debit.?card|cvv|card.?expiry|ifsc|swift.?code|bank.?statement|beneficiary|transfer.?amount)\b/i;
+const IDENTITY_URL  = /\b(aadhaar|uidai|digilocker|incometax|pan.?verification|kyc|passport|voter.?id|driving.?licen|epfo|esic|cowin|nsdl|cbdt|traces)\b/i;
+const IDENTITY_DOM  = /\b(aadhaar.?number|aadhar|pan.?card|voter.?id|driving.?licen|passport.?number|date.?of.?birth|dob|father.?name|kyc|biometric|fingerprint)\b/i;
+const HEALTHCARE_URL = /\b(apollo|fortis|manipal|aiims|practo|1mg|pharmeasy|netmeds|medplus|thyrocare|aarogya|cowin|nhm|mohfw|esic|cghs|abha)\b/i;
+const HEALTHCARE_DOM = /\b(patient.?id|medical.?record|prescription|diagnosis|blood.?group|health.?insurance|abha.?number|uhid|clinical)\b/i;
+const SOCIAL_URL    = /\b(facebook|instagram|twitter|x\.com|linkedin|whatsapp|telegram|snapchat|youtube|reddit|quora|pinterest|discord|slack)\b/i;
+const ECOMMERCE_URL = /\b(amazon|flipkart|myntra|meesho|snapdeal|bigbasket|blinkit|zepto|swiggy|zomato|nykaa|ajio|cart|checkout)\b/i;
+
+function heuristicClassify(url, domText) {
+  const urlL = url.toLowerCase();
+  const domL = (domText || '').toLowerCase().slice(0, 4000);
+  if (FINANCIAL_URL.test(urlL) || FINANCIAL_DOM.test(domL)) return { label:'financial', score:0.95, source:'heuristic', privacyLevel:'HIGH 🔴' };
+  if (IDENTITY_URL.test(urlL)  || IDENTITY_DOM.test(domL))  return { label:'identity',  score:0.95, source:'heuristic', privacyLevel:'HIGH 🔴' };
+  if (HEALTHCARE_URL.test(urlL)|| HEALTHCARE_DOM.test(domL)) return { label:'healthcare',score:0.92, source:'heuristic', privacyLevel:'HIGH 🔴' };
+  if (SOCIAL_URL.test(urlL))    return { label:'social',    score:0.92, source:'heuristic', privacyLevel:'MEDIUM 🟡' };
+  if (ECOMMERCE_URL.test(urlL)) return { label:'ecommerce', score:0.90, source:'heuristic', privacyLevel:'MEDIUM 🟡' };
+  return { label:'general', score:0.80, source:'heuristic_fallback', privacyLevel:'LOW 🟢 (CLIP would run)' };
+}
+
+// ════════════════════════════════════════════════════
+// Test Harness
+// ════════════════════════════════════════════════════
+
+let totalTests = 0, passCount = 0, failCount = 0;
+
+function updateSummary() {
+  document.getElementById('totalTests').textContent = totalTests;
+  document.getElementById('passCount').textContent = passCount;
+  document.getElementById('failCount').textContent = failCount;
+}
+
+function assert(condition, label) {
+  totalTests++;
+  if (condition) { passCount++; return `<span class="pass">✅ PASS</span> ${label}`; }
+  else { failCount++; return `<span class="fail">❌ FAIL</span> ${label}`; }
+}
+
+function showPiiTags(types) {
+  if (!types.length) return '<span class="tag tag-green">✓ No PII found</span>';
+  return types.map(t => `<span class="tag tag-red">🔴 ${t}</span>`).join('');
+}
+
+function renderRedact(input, id, extraAsserts = []) {
+  const r = redactText(input);
+  const lines = [
+    `<b>Input:</b> ${escHtml(input)}`,
+    `<b>Redacted:</b> <span class="${r.wasRedacted?'warn':'pass'}">${escHtml(r.redacted)}</span>`,
+    `<b>PII Found:</b> ${showPiiTags(r.piiTypes)}`,
+    `<b>Matches:</b> ${r.matches ? r.matches.map(m => `<span class="tag tag-red">${m.type}: "${escHtml(m.value)}"</span>`).join(' ') : 'none'}`,
+    ...extraAsserts
+  ];
+  document.getElementById(id).innerHTML = lines.join('<br>');
+  updateSummary();
+}
+
+function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ════ Individual Tests ════
+
+function testAadhaar() {
+  const input = document.getElementById('aadhaarInput').value;
+  const r = redactText(input);
+  const lines = [
+    assert(r.wasRedacted, 'Aadhaar detected'),
+    assert(r.piiTypes.includes('AADHAAR'), 'Type is AADHAAR'),
+    assert(!r.redacted.match(/\b[2-9]\d{3}[\s\-]?\d{4}[\s\-]?\d{4}\b/), 'Raw Aadhaar number removed from output'),
+    assert(r.redacted.includes('[REDACTED-AADHAAR]'), 'Replaced with [REDACTED-AADHAAR] token'),
+    `<br><b>Input:</b>   ${escHtml(r.original)}`,
+    `<b>Redacted:</b> <span class="warn">${escHtml(r.redacted)}</span>`,
+  ];
+  document.getElementById('aadhaarOut').innerHTML = lines.join('<br>');
+  updateSummary();
+}
+
+function testPAN() {
+  const input = document.getElementById('panInput').value;
+  const r = redactText(input);
+  const lines = [
+    assert(r.wasRedacted, 'PAN card detected'),
+    assert(r.piiTypes.includes('PAN'), 'Type is PAN'),
+    assert(!r.redacted.match(/\b[A-Z]{5}[0-9]{4}[A-Z]\b/), 'Raw PAN removed'),
+    assert(r.redacted.includes('[REDACTED-PAN]'), 'Replaced with [REDACTED-PAN] token'),
+    `<br><b>Input:</b>   ${escHtml(r.original)}`,
+    `<b>Redacted:</b> <span class="warn">${escHtml(r.redacted)}</span>`,
+  ];
+  document.getElementById('panOut').innerHTML = lines.join('<br>');
+  updateSummary();
+}
+
+function testContact() {
+  const input = document.getElementById('contactInput').value;
+  const r = redactText(input);
+  const lines = [
+    assert(r.piiTypes.includes('PHONE'), 'Phone number detected'),
+    assert(r.piiTypes.includes('EMAIL'), 'Email address detected'),
+    assert(!r.redacted.includes('9876543210'), 'Phone raw number stripped'),
+    assert(!r.redacted.includes('user.name@domain.com'), 'Email address stripped'),
+    `<br><b>Input:</b>   ${escHtml(r.original)}`,
+    `<b>Redacted:</b> <span class="warn">${escHtml(r.redacted)}</span>`,
+  ];
+  document.getElementById('contactOut').innerHTML = lines.join('<br>');
+  updateSummary();
+}
+
+function testFinancial() {
+  const input = document.getElementById('finInput').value;
+  const r = redactText(input);
+  const lines = [
+    assert(r.wasRedacted, 'Financial PII detected'),
+    `<b>Types found:</b> ${showPiiTags(r.piiTypes)}`,
+    `<br><b>Input:</b>   ${escHtml(r.original)}`,
+    `<b>Redacted:</b> <span class="warn">${escHtml(r.redacted)}</span>`,
+    assert(!r.redacted.includes('SBIN0001234'), 'IFSC removed'),
+    assert(!r.redacted.includes('4111 2222 3333 4444'), 'Card number removed'),
+  ];
+  document.getElementById('finOut').innerHTML = lines.join('<br>');
+  updateSummary();
+}
+
+function testUrl() {
+  const input = document.getElementById('urlInput').value;
+  const redacted = redactUrl(input);
+  const lines = [
+    assert(!redacted.includes('ABCDE1234F'), 'PAN removed from URL params'),
+    assert(!redacted.includes('john@test.com'), 'Email removed from URL params'),
+    assert(!redacted.includes('9876543210'), 'Phone removed from URL params'),
+    assert(redacted.includes('portal.gov.in'), 'Domain preserved'),
+    assert(redacted.includes('/kyc'), 'Path preserved'),
+    `<br><b>Original:</b> ${escHtml(input)}`,
+    `<b>Redacted:</b>  <span class="warn">${escHtml(redacted)}</span>`,
+  ];
+  document.getElementById('urlOut').innerHTML = lines.join('<br>');
+  updateSummary();
+}
+
+function testSafe() {
+  const input = document.getElementById('safeInput').value;
+  const r = redactText(input);
+  const lines = [
+    assert(!r.wasRedacted, 'Safe text: no PII detected (no false positives)'),
+    assert(r.redacted === r.original, 'Text unchanged'),
+    `<br><b>Input:</b>   ${escHtml(r.original)}`,
+    `<b>Output:</b>  <span class="pass">${escHtml(r.redacted)}</span>`,
+    `<span class="tag tag-green">✓ No PII found — text passed through unchanged</span>`,
+  ];
+  document.getElementById('safeOut').innerHTML = lines.join('<br>');
+  updateSummary();
+}
+
+function testClassify() {
+  const url = document.getElementById('classifyUrl').value;
+  const dom = document.getElementById('classifyDom').value;
+  const c = heuristicClassify(url, dom);
+  const privacy = c.privacyLevel;
+  document.getElementById('classifyOut').innerHTML = [
+    `<b>Label:</b> <span class="tag tag-indigo">${c.label}</span>`,
+    `<b>Score:</b> ${c.score} <b>Source:</b> ${c.source}`,
+    `<b>Privacy Level:</b> <span class="warn">${privacy}</span>`,
+    `<br><span class="${c.privacyLevel.includes('HIGH') ? 'fail' : 'pass'}">
+      ${c.privacyLevel.includes('HIGH')
+        ? '🔴 ALL protections active: Face detection + PII redaction + DOM field masking'
+        : c.privacyLevel.includes('MEDIUM')
+          ? '🟡 Face detection active, text PII scanning active'
+          : '🟢 Basic scan only — CLIP would classify visually'
+      }
+    </span>`,
+  ].join('<br>');
+}
+
+function testClassify2() {
+  const url = document.getElementById('classifyUrl2').value;
+  const dom = document.getElementById('classifyDom2').value;
+  const c = heuristicClassify(url, dom);
+  document.getElementById('classifyOut2').innerHTML = [
+    `<b>Label:</b> <span class="tag tag-indigo">${c.label}</span>`,
+    `<b>Score:</b> ${c.score} <b>Source:</b> ${c.source}`,
+    `<b>Privacy Level:</b> <span class="warn">${c.privacyLevel}</span>`,
+    assert(c.label === 'identity', 'Correctly classified as identity/KYC page'),
+    assert(c.privacyLevel.includes('HIGH'), 'Privacy level is HIGH — full protections active'),
+  ].join('<br>');
+  updateSummary();
+}
+
+function testCustom() {
+  const input = document.getElementById('customInput').value;
+  const r = redactText(input);
+  const det = detectPii(input);
+  document.getElementById('customOut').innerHTML = [
+    `<b>PII Types Detected:</b> ${showPiiTags(r.piiTypes)}`,
+    `<b>Matches:</b><br>${det.matches.length ? det.matches.map(m =>
+      `  <span class="tag tag-red">${m.type}</span> → "<code>${escHtml(m.value)}</code>" at pos ${m.start}–${m.end}`
+    ).join('<br>') : '<span class="pass">None</span>'}`,
+    `<br><b>Redacted Output:</b>`,
+    `<span class="${r.wasRedacted?'warn':'pass'}">${escHtml(r.redacted)}</span>`,
+  ].join('<br>');
+}
+
+function runAllTests() {
+  totalTests = 0; passCount = 0; failCount = 0;
+  testAadhaar();
+  testPAN();
+  testContact();
+  testFinancial();
+  testUrl();
+  testSafe();
+  testClassify2();
+  updateSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

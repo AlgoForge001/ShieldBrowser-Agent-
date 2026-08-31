@@ -241,7 +241,64 @@ export class VisionPipeline {
 
       const results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: () => document.body?.innerText?.slice(0, 4000) ?? '',
+        func: () => {
+          // 1. Main page visible text (capped to avoid token bloat)
+          const bodyText = document.body?.innerText?.slice(0, 3000) ?? '';
+
+          // 2. Capture non-password interactive field values.
+          //    document.body.innerText never includes input .value — we must
+          //    read them explicitly. Password fields are intentionally skipped
+          //    (they are masked by the DOM bbox extractor separately).
+          const fieldLines: string[] = [];
+          const inputs = document.querySelectorAll<HTMLInputElement>(
+            'input:not([type="password"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):not([type="checkbox"]):not([type="radio"])'
+          );
+          inputs.forEach(el => {
+            const label =
+              el.labels?.[0]?.innerText?.trim() ||
+              el.getAttribute('placeholder') ||
+              el.getAttribute('name') ||
+              el.getAttribute('id') ||
+              'field';
+            const val = el.value?.trim();
+            if (val) {
+              fieldLines.push(`[INPUT "${label}"]: ${val}`);
+            }
+          });
+
+          // Textareas
+          const textareas = document.querySelectorAll<HTMLTextAreaElement>('textarea');
+          textareas.forEach(el => {
+            const label =
+              el.labels?.[0]?.innerText?.trim() ||
+              el.getAttribute('placeholder') ||
+              el.getAttribute('name') ||
+              'textarea';
+            const val = el.value?.trim();
+            if (val) {
+              fieldLines.push(`[TEXTAREA "${label}"]: ${val}`);
+            }
+          });
+
+          // Select dropdowns
+          const selects = document.querySelectorAll<HTMLSelectElement>('select');
+          selects.forEach(el => {
+            const label =
+              el.labels?.[0]?.innerText?.trim() ||
+              el.getAttribute('name') ||
+              'select';
+            const val = el.options[el.selectedIndex]?.text?.trim();
+            if (val) {
+              fieldLines.push(`[SELECT "${label}"]: ${val}`);
+            }
+          });
+
+          const formContext = fieldLines.length
+            ? '\n\n--- FORM FIELD VALUES ---\n' + fieldLines.join('\n')
+            : '';
+
+          return bodyText + formContext;
+        },
       });
 
       return results?.[0]?.result ?? '';
