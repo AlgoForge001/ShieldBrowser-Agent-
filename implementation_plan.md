@@ -420,6 +420,54 @@ These are the critical gaps that must be finished. Prioritized by impact on eval
 
 ---
 
+### TASK 0.5 — Privacy Shadow: Semantic Token Rendering (Visual Redactor Upgrade)
+**Priority: HIGH | Effort: Tiny (~10 lines) | Eval Impact: VLM accuracy, novel demo story**
+
+> [!IMPORTANT]
+> **The Core Upgrade:** Instead of rendering plain black boxes over text PII fields, overlay a semantic label that tells the VLM *what kind of data was there*, without revealing the actual value. Faces and images stay as pure black/pixelated blobs — no labels needed there.
+
+**Two-tier redaction strategy (final design):**
+
+| Region Type | What VLM Sees | Why |
+|---|---|---|
+| Password / OTP / Aadhaar / PAN / Credit Card | Black background + `<CREDENTIAL>` / `<OTP>` / `<IDENTITY_ID>` / `<CARD_NUMBER>` label | VLM understands field role, can plan correctly |
+| Face / profile photo / biometric image | Pure black box or pixelated blur (current) | No semantic label needed — VLM just knows it was redacted |
+
+**Demo pitch:** *"The AI never sees your Aadhaar number — it sees `<IDENTITY_ID>`. The real value stays on your device. The AI gets just enough context to do its job."*
+
+**What to change in `visualRedactor.ts`:**
+```typescript
+// Current (plain black box for all types):
+ctx.fillStyle = '#000000';
+ctx.fillRect(x, y, w, h);
+
+// NEW — for text PII fields (password, aadhaar, pan, otp, card):
+ctx.fillStyle = '#000000';
+ctx.fillRect(x, y, w, h);               // black background (same as before)
+ctx.fillStyle = '#00E5A0';              // green label text — visible, legible
+ctx.font = `bold ${Math.min(h * 0.55, 14)}px monospace`;
+ctx.fillText(`<${tokenLabel}>`, x + 4, y + h * 0.68);
+
+// Faces / images — UNCHANGED (pure black / pixelate blur):
+ctx.fillStyle = '#000000';
+ctx.fillRect(x, y, w, h);              // no label
+```
+
+**Token label mapping:**
+```
+input[type="password"]       → <CREDENTIAL>
+aadhaar / uid fields         → <IDENTITY_ID>
+pan fields                   → <TAX_ID>
+otp fields                   → <OTP>
+credit/debit card fields     → <CARD_NUMBER>
+cvv / expiry                 → <CARD_SECURITY>
+face / biometric image       → (no label — black/blur only)
+```
+
+**Files to edit:**
+- `chrome-extension/src/background/vision/visualRedactor.ts` — split rendering logic by `type` (text PII → token label, face/image → plain black)
+- `chrome-extension/src/background/vision/visualPiiDetector.ts` — ensure each bbox carries a `tokenLabel` field alongside `type`
+
 ### TASK 1 — Wire Vision Pipeline → SidePanel UI
 **Priority: CRITICAL | Eval Impact: 25% + 20% marks | Demo Risk: HIGHEST**
 
@@ -474,6 +522,33 @@ This is ~20 lines of code and is the most powerful zero-cost differentiator.
 
 ---
 
+### TASK 3B — Live Action Guardian (Pre-Execution Verification & Drift Detection)
+**Priority: CRITICAL / HIGH | Eval Impact: Real-Time Action Safety, Unique Innovation Differentiator**
+
+> [!IMPORTANT]
+> **Key Differentiator for SIH:** “ShieldBrowse doesn't just secure what the AI sees or what it plans to do. It continuously verifies what the AI is actually doing in real time.”
+> AI browser agents must NEVER be trusted to execute high-impact actions blindly in dynamic environments where prices, quantities, and balances change on the fly.
+
+**What to build:**
+- New file: `chrome-extension/src/background/agent/actions/liveActionGuardian.ts`
+- **Three-way comparison check** right before executing any actionable command (in `visionActionExecutor.ts`):
+  1. **User's Original Intent:** Approved target symbol, approved max price, approved quantity, destination account.
+  2. **Live Browser State:** Immediate live DOM inspection of target elements/inputs (`#quantity`, `#price`, `#account`, buttons).
+  3. **Agent's Next Action:** Target selector, values to be typed/clicked.
+- **Drift Detection & Interception:**
+  - If a drift is detected (e.g. quantity changed from 10 to 100, price spiked above limit, or destination changed):
+    - **PAUSE** execution immediately.
+    - Emit `ACTION_GUARDIAN_ALERT` to `SidePanel.tsx` with specific drift details.
+    - Require user confirmation or auto-block before the click reaches the page.
+
+**Files to create/edit:**
+- `chrome-extension/src/background/agent/actions/liveActionGuardian.ts` **(NEW)**
+- `chrome-extension/src/background/agent/actions/visionActionExecutor.ts` — integrate Guardian verification hook before dispatching clicks/inputs
+- `pages/side-panel/src/SidePanel.tsx` — render Live Guardian confirmation / drift alert dialog
+- `Project/nanobrowser/demo-pii-page.html` — include a dynamic order/transaction drift test section
+
+---
+
 ### TASK 4 — Cryptographic Egress Attestation (Angle B — Signed Manifest)
 **Priority: HIGH | Eval Impact: Unique technical claim, audit trail**
 
@@ -521,6 +596,7 @@ This is ~20 lines of code and is the most powerful zero-cost differentiator.
   - A fake "HDFC NetBanking Login" form with Aadhaar number, PAN, password, credit card fields.
   - A "face photo" img element (use a placeholder stock photo or generated face).
   - When the extension runs vision pipeline on this page, it should detect and redact ALL these fields.
+  - **Live Action Guardian Simulation Form:** A mock trading/transfer widget where price or quantity drifts in real-time, proving the Guardian blocks/pauses unauthorized drift.
 - A `DEMO_SCRIPT.md` with the exact step-by-step judges demo walkthrough.
 
 **Files to create:**
@@ -549,16 +625,17 @@ These were discussed and are architecturally valid — but too risky to implemen
 ## 📋 Execution Priority Order
 
 ```
-WEEK / DAY  TASK                                          OWNER       TIME EST
-──────────────────────────────────────────────────────────────────────────────
-Day 1 AM    Task 1: Wire Pipeline → SidePanel (UI)        Dev         4 hrs   ← FIRST: demo visibility
-Day 1 PM    Task 2: Live Shield indicator in header       Dev/Design  2 hrs
-Day 2 AM    Task 3: IPI Sanitizer (ipiSanitizer.ts)       Dev         2 hrs
-Day 2 PM    Task 4: Egress Signer (egressSigner.ts)       Dev         3 hrs
-Day 3 AM    Task 5: Manifest receipt server endpoint      Dev         1.5 hrs
-Day 3 PM    Task 6: demo-pii-page.html + DEMO_SCRIPT.md  All         2 hrs
-Day 4       Full E2E smoke test + fix bugs                Dev         Full day
-Day 5       Slides update (add Future Scope section)      PM/Design   Half day
+WEEK / DAY  TASK                                                OWNER       TIME EST
+────────────────────────────────────────────────────────────────────────────────────
+Day 1 AM    Task 1: Wire Pipeline → SidePanel (UI)              Dev         4 hrs   ← FIRST: demo visibility
+Day 1 PM    Task 2: Live Shield indicator in header             Dev/Design  2 hrs
+Day 2 AM    Task 3: IPI Sanitizer (ipiSanitizer.ts)             Dev         2 hrs
+Day 2 PM    Task 3B: Live Action Guardian (liveActionGuardian)  Dev         3 hrs   ← KEY INNOVATION DEMO
+Day 3 AM    Task 4: Egress Signer (egressSigner.ts)             Dev         3 hrs
+Day 3 PM    Task 5: Manifest receipt server endpoint            Dev         1.5 hrs
+Day 4 AM    Task 6: demo-pii-page.html + DEMO_SCRIPT.md        All         2.5 hrs
+Day 4 PM    Full E2E smoke test + fix bugs                      Dev         Full day
+Day 5       Slides update (add Future Scope + Guardian)        PM/Design   Half day
 ```
 
 ---
