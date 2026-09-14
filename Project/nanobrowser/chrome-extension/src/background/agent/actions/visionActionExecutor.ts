@@ -3,22 +3,45 @@
  *
  * Receives the action list returned by the ShieldBrowse server and
  * executes each action using the existing Puppeteer Page object.
+ *
+ * Task 3B: Integrated Live Action Guardian — every action passes through
+ * a pre-execution safety check before being dispatched to the DOM.
  */
 
 import type Page from '../../browser/page';
 import { createLogger } from '../../log';
 import type { AgentAction } from '../../services/serverClient';
+import { guardianCheck, type GuardianAlertPayload } from './liveActionGuardian';
 
 const logger = createLogger('VisionActionExecutor');
 
 export interface ExecutionResult {
   actionsAttempted: number;
   actionsSucceeded: number;
+  actionsBlocked: number;
   errors: string[];
 }
 
 /**
+ * Callback to broadcast Guardian alerts to the SidePanel.
+ * Set by pipeline.ts when it calls executeActions().
+ */
+export type AlertBroadcaster = (payload: GuardianAlertPayload) => void;
+
+let _broadcastAlert: AlertBroadcaster = () => {
+  // no-op default — pipeline.ts wires this up before execution
+};
+
+/** Register the SidePanel broadcast function (called from pipeline.ts) */
+export function setAlertBroadcaster(fn: AlertBroadcaster): void {
+  _broadcastAlert = fn;
+}
+
+/**
  * Executes a list of actions returned by the ShieldBrowse server.
+ *
+ * Each action passes through the Live Action Guardian before execution.
+ * Blocked actions are skipped and recorded in executionResult.actionsBlocked.
  *
  * @param actions - Parsed action list from server
  * @param page    - Puppeteer Page wrapper from BrowserContext
@@ -30,11 +53,31 @@ export async function executeActions(
   const result: ExecutionResult = {
     actionsAttempted: actions.length,
     actionsSucceeded: 0,
+    actionsBlocked: 0,
     errors: [],
   };
 
   for (const action of actions) {
     try {
+      // ── Task 3B: Live Action Guardian pre-execution check ─────────────────
+      const guardResult = await guardianCheck(action, _broadcastAlert);
+
+      if (!guardResult.safe && !guardResult.skipped) {
+        logger.warning(
+          `[Guardian] 🚫 Action [${action.type}] blocked by Guardian: ${guardResult.summary}`,
+        );
+        result.actionsBlocked++;
+        result.errors.push(`[GUARDIAN_BLOCKED] ${action.type}: ${guardResult.summary}`);
+        continue; // skip this action — do NOT execute
+      }
+
+      if (!guardResult.skipped && guardResult.drifts.length > 0) {
+        logger.info(
+          `[Guardian] ⚠️ Action [${action.type}] has warnings but user approved: ${guardResult.summary}`,
+        );
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       await executeSingleAction(action, page);
       result.actionsSucceeded++;
       logger.info(`Executed [${action.type}]`, action);

@@ -593,3 +593,256 @@ code {
   100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Task 3B — Live Action Guardian Dialog
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes guardianSlideIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes guardianPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+  50%       { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+}
+
+/* Full-screen blocking overlay */
+.guardian-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px 8px 0;
+  background: rgba(2, 6, 23, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+/* Dialog card */
+.guardian-dialog {
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+  border: 1.5px solid rgba(239, 68, 68, 0.6);
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  animation: guardianSlideIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(239,68,68,0.2);
+}
+
+/* Header row */
+.guardian-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.guardian-icon {
+  font-size: 22px;
+  line-height: 1;
+  animation: guardianPulse 2s infinite;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guardian-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.guardian-subtitle {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin: 1px 0 0;
+}
+
+.guardian-badge {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.guardian-badge.critical {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Action code row */
+.guardian-action-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.guardian-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.guardian-action-code {
+  font-size: 0.72rem;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: #7dd3fc;
+  word-break: break-all;
+  background: transparent;
+  padding: 0;
+}
+
+/* Drift section */
+.guardian-drift-section {
+  margin-bottom: 12px;
+}
+
+.guardian-drift-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin: 0 0 6px;
+  letter-spacing: 0.01em;
+}
+
+.guardian-drift-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.guardian-drift-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+  font-size: 0.7rem;
+}
+
+.guardian-drift-item.drift-critical {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+}
+
+.guardian-drift-item.drift-warning {
+  background: rgba(234, 179, 8, 0.1);
+  border-left-color: #eab308;
+}
+
+.drift-field {
+  font-weight: 700;
+  color: #e2e8f0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 60px;
+}
+
+.drift-expected {
+  color: #94a3b8;
+  font-size: 0.68rem;
+}
+
+.drift-arrow {
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.drift-found {
+  color: #fca5a5;
+  font-size: 0.68rem;
+}
+
+.drift-found strong, .drift-expected strong {
+  font-weight: 700;
+}
+
+.drift-badge {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.drift-badge.critical {
+  background: rgba(239,68,68,0.2);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.4);
+}
+
+.drift-badge.warning {
+  background: rgba(234,179,8,0.2);
+  color: #fde047;
+  border: 1px solid rgba(234,179,8,0.4);
+}
+
+/* CTA buttons */
+.guardian-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.guardian-btn {
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.guardian-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.guardian-btn:active {
+  transform: translateY(0);
+}
+
+.guardian-btn.block {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(220,38,38,0.35);
+}
+
+.guardian-btn.approve {
+  background: rgba(255,255,255,0.06);
+  color: #94a3b8;
+  border: 1.5px solid rgba(255,255,255,0.1);
+}
+
+/* Blocked log */
+.guardian-blocked-log {
+  text-align: center;
+  font-size: 0.65rem;
+  color: #64748b;
+  margin: 0;
+  padding-top: 2px;
+}

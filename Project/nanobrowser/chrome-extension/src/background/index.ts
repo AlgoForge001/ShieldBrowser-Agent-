@@ -20,6 +20,7 @@ import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
 import { VisionPipeline } from './vision/pipeline';
 import { checkServerHealth } from './services/serverClient';
+import { resolveGuardianConfirmation } from './agent/actions/liveActionGuardian';
 
 const logger = createLogger('background');
 
@@ -270,6 +271,15 @@ chrome.runtime.onConnect.addListener(port => {
                 enableDomExtraction: message.enableDomExtraction ?? true,
                 skipExecution: message.skipExecution ?? false,
                 screenshotB64: preScreenshot, // pass pre-captured screenshot
+                // Task 3B: Wire Guardian alert broadcaster → SidePanel port
+                onGuardianAlert: (payload) => {
+                  try {
+                    port.postMessage(payload);
+                    logger.info('[Guardian] Alert broadcast to SidePanel:', payload.checkId);
+                  } catch (e) {
+                    logger.warning('[Guardian] Failed to broadcast alert to SidePanel:', String(e));
+                  }
+                },
               });
               return port.postMessage({ type: 'vision_task_result', result });
             } catch (err) {
@@ -277,6 +287,16 @@ chrome.runtime.onConnect.addListener(port => {
             }
           }
 
+
+          case 'action_guardian_response': {
+            // Task 3B: User approved or blocked a Guardian drift alert
+            // message.checkId — the unique check ID from the alert
+            // message.approved — true = proceed, false = block
+            const { checkId, approved } = message as { checkId: string; approved: boolean };
+            resolveGuardianConfirmation(checkId, !!approved);
+            logger.info(`[Guardian] User response for ${checkId}: ${approved ? 'APPROVED' : 'BLOCKED'}`);
+            return port.postMessage({ type: 'success' });
+          }
 
           case 'server_health': {
             const healthy = await checkServerHealth();

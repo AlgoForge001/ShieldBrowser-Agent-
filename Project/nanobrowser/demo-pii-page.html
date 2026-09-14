@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShieldBrowse — PII Demo & Guardian Drift Test</title>
+  <meta name="description" content="ShieldBrowse demo page — tests PII redaction (Aadhaar, PAN, password, credit card, face photo) and Live Action Guardian drift detection.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2438;
+      --border: rgba(125,211,252,0.12);
+      --accent: #38bdf8;
+      --accent2: #818cf8;
+      --danger: #f87171;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --radius: 12px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(56,189,248,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(129,140,248,0.06) 0%, transparent 50%);
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 36px;
+      padding: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .page-header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-blue { background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+    .badge-red  { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+    .badge-green{ background: rgba(52,211,153,0.15);  color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .section-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .section-header p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group input, .form-group select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56,189,248,0.15);
+    }
+
+    .face-photo-box {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #374151, #1f2937);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.4rem;
+      box-shadow: var(--shadow);
+    }
+
+    .submit-btn {
+      padding: 11px 24px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      transition: transform 0.15s, box-shadow 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .submit-btn.primary { background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; }
+    .submit-btn.danger { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; }
+
+    .form-actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ── Guardian Drift Demo Section ── */
+    .drift-demo {
+      background: linear-gradient(145deg, #0f172a 0%, #1a2438 100%);
+      border: 1.5px solid rgba(248,113,113,0.3);
+    }
+
+    .drift-widget {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .drift-field-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .drift-field-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .drift-live-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: var(--success);
+      transition: color 0.3s;
+    }
+
+    .drift-live-value.drifted {
+      color: var(--danger);
+      animation: flashDrift 0.5s ease-in-out 3;
+    }
+
+    @keyframes flashDrift {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .drift-sublabel {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .drift-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .drift-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1.5px solid;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 700;
+      transition: transform 0.15s, box-shadow 0.15s;
+      background: transparent;
+    }
+
+    .drift-btn:hover { transform: translateY(-1px); }
+
+    .drift-btn.qty-drift  { border-color: var(--warning); color: var(--warning); }
+    .drift-btn.price-drift{ border-color: var(--danger);  color: var(--danger);  }
+    .drift-btn.dest-drift { border-color: var(--accent2); color: var(--accent2); }
+    .drift-btn.reset      { border-color: var(--text-muted); color: var(--text-muted); }
+    .drift-btn.drift-simulate { border-color: var(--danger); color: #fff; background: var(--danger); }
+
+    .drift-scenario-box {
+      background: rgba(248,113,113,0.07);
+      border: 1px dashed rgba(248,113,113,0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+
+    .drift-scenario-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--danger);
+      margin-bottom: 4px;
+    }
+
+    .drift-scenario-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* hidden guardian-readable input fields */
+    .guardian-fields { display: none; }
+
+    .info-strip {
+      background: rgba(56,189,248,0.07);
+      border: 1px solid rgba(56,189,248,0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .info-strip-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .info-strip-text { font-size: 0.78rem; color: var(--text-muted); line-height: 1.6; }
+    .info-strip-text strong { color: var(--accent); }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 0 rgba(52,211,153,0.5);
+      animation: statusPulse 2s infinite;
+    }
+
+    @keyframes statusPulse {
+      0% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); }
+      70% { box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+      100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+    }
+
+    .timer-badge {
+      background: rgba(251,191,36,0.1);
+      border: 1px solid rgba(251,191,36,0.3);
+      color: var(--warning);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <h1>🛡️ ShieldBrowse — PII Demo & Guardian Test</h1>
+    <p>This page is designed to demonstrate PII detection, redaction, and the Live Action Guardian drift-detection system.</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
+      <span class="badge badge-blue">🔍 PII Redaction Demo</span>
+      <span class="badge badge-red">🛡️ Live Action Guardian</span>
+      <span class="badge badge-green">✅ SIH Hackathon 2026</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 1: HDFC NetBanking Login (PII Fields)
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>🏦 HDFC NetBanking — Login (PII Demo)</h2>
+        <p>Contains password, Aadhaar, PAN, OTP, and credit card fields — all should be redacted by ShieldBrowse before reaching the AI.</p>
+      </div>
+      <span class="badge badge-red">PII Test</span>
+    </div>
+
+    <!-- Face photo (should be detected and pixelated) -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+      <div class="face-photo-box" id="face-photo">👤</div>
+      <div>
+        <p style="font-size:0.85rem;font-weight:600;">Rajesh Kumar</p>
+        <p style="font-size:0.75rem;color:var(--text-muted);">Customer ID: HDFC-7830291</p>
+        <span class="badge badge-green" style="margin-top:6px;">Face photo above should be pixelated by ShieldBrowse</span>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Customer ID</label>
+        <input type="text" id="customer-id" value="HDFC-7830291" autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label>Password 🔐</label>
+        <input type="password" id="password" name="password" value="MySecret@2026" autocomplete="current-password">
+      </div>
+
+      <div class="form-group">
+        <label>Aadhaar Number 🪪</label>
+        <input type="text" id="aadhaar" name="aadhaar" value="9876 5432 1012" maxlength="14" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>PAN Card 📋</label>
+        <input type="text" id="pan" name="pan" value="ABCDE1234F" maxlength="10" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>OTP 🔢</label>
+        <input type="text" id="otp" name="otp" value="847291" maxlength="6" autocomplete="one-time-code">
+      </div>
+
+      <div class="form-group">
+        <label>Credit Card Number 💳</label>
+        <input type="text" id="cc-number" name="cc-number" value="4111 1111 1111 1111" maxlength="19" autocomplete="cc-number">
+      </div>
+
+      <div class="form-group">
+        <label>CVV</label>
+        <input type="text" id="cvv" name="cvv" value="425" maxlength="4" autocomplete="cc-csc">
+      </div>
+
+      <div class="form-group">
+        <label>Card Expiry</label>
+        <input type="text" id="expiry" name="expiry" value="08/28" maxlength="5" autocomplete="cc-exp">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="submit-btn primary" id="submit-login" type="button">🔐 Secure Login</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 2: Live Action Guardian — Drift Simulation
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="section drift-demo">
+    <div class="section-header">
+      <div>
+        <h2>🛡️ Live Action Guardian — Drift Test</h2>
+        <p>Simulates a trading/transfer widget where values drift mid-session. The Guardian should detect and block the AI from executing stale/wrong actions.</p>
+      </div>
+      <span class="badge badge-red">Guardian Demo</span>
+    </div>
+
+    <!-- Scenario explanation -->
+    <div class="drift-scenario-box">
+      <div class="drift-scenario-title">🎯 Demo Scenario</div>
+      <div class="drift-scenario-desc">
+        <strong>Step 1:</strong> User approves: BUY 10 shares of AAPL at max ₹180. <br>
+        <strong>Step 2:</strong> While the AI is planning, price spikes to ₹210 or quantity changes from 10 → 100. <br>
+        <strong>Step 3:</strong> ShieldBrowse Guardian intercepts the AI's CLICK → "Place Order" action and shows an alert in the side panel.<br>
+        <strong>Step 4:</strong> User decides to Block or Approve in real-time. <br>
+        Click the drift buttons below to simulate each scenario.
+      </div>
+    </div>
+
+    <!-- Status row -->
+    <div class="status-row">
+      <span class="status-dot" id="guardian-status-dot"></span>
+      <span id="guardian-status-text">Guardian Active — monitoring trade intent</span>
+      <span class="timer-badge" id="price-timer">Live</span>
+    </div>
+
+    <!-- Live field display -->
+    <div class="drift-widget">
+      <div class="drift-field-box">
+        <span class="drift-field-label">Symbol</span>
+        <span class="drift-live-value" id="display-symbol">AAPL</span>
+        <span class="drift-sublabel">Target stock</span>
+      </div>
+
+      <div class="drift-field-box">
+        <span class="drift-field-label">Quantity</span>
+        <span class="drift-live-value" id="display-quantity">10</span>
+        <span class="drift-sublabel">User approved: 10 shares</span>
+      </div>
+
+      <div class="drift-field-box">
+        <span class="drift-field-label">Live Price (₹)</span>
+        <span class="drift-live-value" id="display-price">174.50</span>
+        <span class="drift-sublabel">Max approved: ₹180</span>
+      </div>
+
+      <div class="drift-field-box">
+        <span class="drift-field-label">Destination A/C</span>
+        <span class="drift-live-value" style="font-size:0.95rem;" id="display-dest">XXXX-9023</span>
+        <span class="drift-sublabel">Approved account</span>
+      </div>
+    </div>
+
+    <!-- Guardian-readable hidden inputs (DOM snapshot targets) -->
+    <div class="guardian-fields">
+      <input id="quantity" name="quantity" value="10">
+      <input id="price"    name="price"    value="174.50">
+      <input id="destination" name="destination" value="XXXX-9023">
+      <input id="symbol"   name="symbol"   value="AAPL">
+    </div>
+
+    <!-- Drift control buttons -->
+    <div class="drift-controls">
+      <button class="drift-btn qty-drift"   onclick="simulateDrift('quantity', '100',     'display-quantity')" type="button">⚠️ Spike Quantity: 10 → 100</button>
+      <button class="drift-btn price-drift" onclick="simulateDrift('price',    '210.00',  'display-price')"    type="button">🔴 Spike Price: ₹174 → ₹210</button>
+      <button class="drift-btn dest-drift"  onclick="simulateDrift('destination', 'FOREIGN-8821', 'display-dest')" type="button">⚡ Change Destination Account</button>
+      <button class="drift-btn reset"       onclick="resetDrift()"                                              type="button">↩ Reset All to Approved Values</button>
+    </div>
+
+    <!-- AI action buttons (these are what the agent would click) -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="submit-btn danger" id="place-order-btn" onclick="agentConfirm()" type="button">
+        🤖 [Agent Action] Place Order
+      </button>
+      <button class="submit-btn primary" id="transfer-funds-btn" onclick="agentConfirm()" type="button">
+        🤖 [Agent Action] Transfer Funds
+      </button>
+    </div>
+
+    <div class="info-strip" style="margin-top:16px;">
+      <span class="info-strip-icon">ℹ️</span>
+      <span class="info-strip-text">
+        <strong>How it works:</strong> When the ShieldBrowse AI agent tries to click "Place Order", the Live Action Guardian captures a live DOM snapshot and compares it to the user's original intent. If <code>#quantity</code>, <code>#price</code>, or <code>#destination</code> have drifted, the Guardian pauses execution and shows a blocking alert in the side panel with full field-by-field diff.
+      </span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 3: UPI / NEFT Transfer (More PII)
+  ═══════════════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>💸 UPI / NEFT Transfer (Additional PII)</h2>
+        <p>Bank account number, IFSC code, UPI ID — all PII that ShieldBrowse should detect and redact.</p>
+      </div>
+      <span class="badge badge-blue">PII Test</span>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Bank Account Number</label>
+        <input type="text" id="bank-account" name="account" value="50100123456789" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>IFSC Code</label>
+        <input type="text" id="ifsc" name="ifsc" value="HDFC0001234" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>UPI ID</label>
+        <input type="text" id="upi" name="upi" value="rajesh.kumar@upi" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Transfer Amount (₹)</label>
+        <input type="text" id="amount" name="amount" value="25000">
+      </div>
+      <div class="form-group">
+        <label>Beneficiary Phone</label>
+        <input type="text" id="phone" name="phone" value="+91 98765 43210" autocomplete="tel">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" name="email" value="rajesh.kumar@gmail.com" autocomplete="email">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="submit-btn primary" id="submit-transfer" type="button">💸 Transfer Funds</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Drift simulation ─────────────────────────────────────────────────────
+
+    const ORIGINAL = {
+      quantity:    '10',
+      price:       '174.50',
+      destination: 'XXXX-9023',
+      symbol:      'AAPL',
+    };
+
+    function simulateDrift(field, newValue, displayId) {
+      const input   = document.getElementById(field);
+      const display = document.getElementById(displayId);
+      if (!input || !display) return;
+
+      input.value   = newValue;
+      display.textContent = newValue;
+      display.classList.add('drifted');
+      setTimeout(() => display.classList.remove('drifted'), 1600);
+
+      updateStatus(`⚠️ Drift: ${field} changed to "${newValue}" — Guardian will intercept next AI action`);
+    }
+
+    function resetDrift() {
+      Object.entries(ORIGINAL).forEach(([field, value]) => {
+        const input = document.getElementById(field);
+        if (input) input.value = value;
+      });
+
+      document.getElementById('display-quantity').textContent = ORIGINAL.quantity;
+      document.getElementById('display-price').textContent    = ORIGINAL.price;
+      document.getElementById('display-dest').textContent     = ORIGINAL.destination;
+      document.getElementById('display-symbol').textContent   = ORIGINAL.symbol;
+
+      ['display-quantity','display-price','display-dest','display-symbol'].forEach(id => {
+        document.getElementById(id)?.classList.remove('drifted');
+      });
+
+      updateStatus('✅ All values reset to user-approved baseline');
+    }
+
+    function agentConfirm() {
+      const qty   = document.getElementById('quantity')?.value;
+      const price = document.getElementById('price')?.value;
+      const dest  = document.getElementById('destination')?.value;
+      const hasDrift = qty !== ORIGINAL.quantity || parseFloat(price) > 180 || dest !== ORIGINAL.destination;
+
+      if (hasDrift) {
+        updateStatus('🚫 Guardian would block this action — drift detected! (See SidePanel in real use)');
+        alert('🛡️ Live Action Guardian\n\nDrift detected!\n\nIn the real ShieldBrowse extension, this action would be blocked and the Side Panel would show a detailed drift alert with Approve / Block buttons.\n\nFields that drifted:\n' +
+          (qty !== ORIGINAL.quantity ? `• Quantity: ${ORIGINAL.quantity} → ${qty}\n` : '') +
+          (parseFloat(price) > 180 ? `• Price: ₹${ORIGINAL.price} → ₹${price} (exceeds max ₹180)\n` : '') +
+          (dest !== ORIGINAL.destination ? `• Destination: ${ORIGINAL.destination} → ${dest}\n` : ''));
+      } else {
+        updateStatus('✅ Guardian check passed — action is safe to execute');
+        alert('✅ Guardian Check Passed\n\nAll values match the user-approved intent:\n• Quantity: 10 ✓\n• Price: ₹' + price + ' ≤ ₹180 ✓\n• Destination: XXXX-9023 ✓\n\nAgent action approved to execute.');
+      }
+    }
+
+    function updateStatus(text) {
+      const el = document.getElementById('guardian-status-text');
+      if (el) el.textContent = text;
+    }
+
+    // ── Auto-drift simulation (for unattended demo) ───────────────────────────
+    // Simulates price slowly ticking up — demonstrates live monitoring
+    let priceInterval = null;
+    let autoPrice = 174.50;
+
+    function startAutoPrice() {
+      if (priceInterval) return;
+      priceInterval = setInterval(() => {
+        autoPrice += (Math.random() - 0.3) * 4;  // slight upward bias
+        autoPrice = Math.max(150, Math.min(220, autoPrice));
+        const display = document.getElementById('display-price');
+        const input   = document.getElementById('price');
+        const formatted = autoPrice.toFixed(2);
+        if (display) {
+          display.textContent = formatted;
+          display.className = 'drift-live-value' + (autoPrice > 180 ? ' drifted' : '');
+        }
+        if (input) input.value = formatted;
+
+        const timer = document.getElementById('price-timer');
+        if (timer) timer.textContent = autoPrice > 180 ? '⚠️ Above Max!' : 'Live';
+      }, 2500);
+    }
+
+    startAutoPrice();
+  </script>
+</body>
+</html>

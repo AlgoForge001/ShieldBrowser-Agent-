@@ -22,7 +22,8 @@ import { detectFaces } from './faceDetector';
 import { classifyScreen } from './screenClassifier';
 import type { ClassificationResult } from './heuristicClassifier';
 import { processWithServer, checkServerHealth, type AgentProcessResponse } from '../services/serverClient';
-import { executeActions, type ExecutionResult } from '../agent/actions/visionActionExecutor';
+import { executeActions, setAlertBroadcaster, type ExecutionResult } from '../agent/actions/visionActionExecutor';
+import type { GuardianAlertPayload } from '../agent/actions/liveActionGuardian';
 import { redactText, redactDomContext } from '../privacy/piiRedactor';
 import { SecureVault } from '../privacy/secureVault';
 import { resolveActions } from '../privacy/tokenResolver';
@@ -48,6 +49,8 @@ export interface PipelineOptions {
   skipExecution?: boolean;         // default: false (dry-run mode)
   skipClassification?: boolean;    // default: false
   screenshotB64?: string;          // optional: pre-captured screenshot (bypasses Puppeteer)
+  /** Task 3B: callback to broadcast Guardian drift alerts to the SidePanel */
+  onGuardianAlert?: (payload: GuardianAlertPayload) => void;
 }
 
 export class VisionPipeline {
@@ -65,7 +68,15 @@ export class VisionPipeline {
       skipExecution = false,
       skipClassification = false,
       screenshotB64: providedScreenshot,
+      onGuardianAlert,
     } = options;
+
+    // ── Task 3B: Register Guardian alert broadcaster ──────────────────────
+    // Wire up the broadcast function so the Guardian can notify the SidePanel
+    // when drift is detected during action execution.
+    setAlertBroadcaster(onGuardianAlert ?? (() => {
+      logger.warning('[Guardian] No alert broadcaster registered — drift alerts will be silent');
+    }));
 
     try {
       // ── Step 1: Server health check ──────────────────────────────────────

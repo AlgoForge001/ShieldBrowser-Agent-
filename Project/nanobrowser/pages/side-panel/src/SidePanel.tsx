@@ -45,6 +45,18 @@ const SidePanel = () => {
   const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEnabled, setReplayEnabled] = useState(false);
+
+  // Task 3B: Live Action Guardian state
+  interface GuardianDrift { field: string; expected: string; found: string; severity: string; }
+  interface GuardianAlert {
+    checkId: string;
+    action: { type: string; selector?: string; value?: string; description?: string };
+    drifts: GuardianDrift[];
+    summary: string;
+  }
+  const [guardianAlert, setGuardianAlert] = useState<GuardianAlert | null>(null);
+  const [guardianBlocked, setGuardianBlocked] = useState<string[]>([]); // log of blocked check IDs
+
   const sessionIdRef = useRef<string | null>(null);
   const isReplayingRef = useRef<boolean>(false);
   const portRef = useRef<chrome.runtime.Port | null>(null);
@@ -340,6 +352,14 @@ const SidePanel = () => {
             timestamp: Date.now(),
           });
           setIsProcessingSpeech(false);
+        } else if (message && message.type === 'action_guardian_alert') {
+          // Task 3B: Live Action Guardian drift alert — show blocking confirmation dialog
+          setGuardianAlert({
+            checkId: message.checkId,
+            action: message.action,
+            drifts: message.drifts,
+            summary: message.summary,
+          });
         } else if (message && message.type === 'heartbeat_ack') {
           console.log('Heartbeat acknowledged');
         } else if (message && message.type === 'vision_task_started') {
@@ -1039,6 +1059,26 @@ const SidePanel = () => {
     }
   };
 
+  // Task 3B: Handle Guardian approve/block user decision
+  const handleGuardianResponse = (approved: boolean) => {
+    if (!guardianAlert) return;
+    const checkId = guardianAlert.checkId;
+    if (!approved) {
+      setGuardianBlocked(prev => [...prev, checkId]);
+    }
+    // Send decision to background
+    try {
+      portRef.current?.postMessage({
+        type: 'action_guardian_response',
+        checkId,
+        approved,
+      });
+    } catch (e) {
+      console.error('[Guardian] Failed to send response:', e);
+    }
+    setGuardianAlert(null);
+  };
+
   return (
     <div>
       <div
@@ -1109,6 +1149,76 @@ const SidePanel = () => {
             </button>
           </div>
         </header>
+
+        {/* Task 3B: Live Action Guardian Alert Dialog */}
+        {guardianAlert && (
+          <div className="guardian-overlay" role="dialog" aria-modal="true" aria-label="Live Action Guardian Alert">
+            <div className="guardian-dialog">
+              {/* Header */}
+              <div className="guardian-header">
+                <span className="guardian-icon">🛡️</span>
+                <div>
+                  <h3 className="guardian-title">Live Action Guardian</h3>
+                  <p className="guardian-subtitle">Drift detected before action execution</p>
+                </div>
+                <span className="guardian-badge critical">ACTION PAUSED</span>
+              </div>
+
+              {/* Action being attempted */}
+              <div className="guardian-action-row">
+                <span className="guardian-label">Agent wants to:</span>
+                <code className="guardian-action-code">
+                  {guardianAlert.action.type.toUpperCase()}
+                  {guardianAlert.action.selector ? ` → ${guardianAlert.action.selector}` : ''}
+                  {guardianAlert.action.value ? ` = "${guardianAlert.action.value}"` : ''}
+                </code>
+              </div>
+
+              {/* Drift table */}
+              <div className="guardian-drift-section">
+                <p className="guardian-drift-heading">⚠️ Live DOM Drift Detected ({guardianAlert.drifts.length} field{guardianAlert.drifts.length !== 1 ? 's' : ''})</p>
+                <div className="guardian-drift-list">
+                  {guardianAlert.drifts.map((drift, i) => (
+                    <div key={i} className={`guardian-drift-item ${drift.severity === 'critical' ? 'drift-critical' : 'drift-warning'}`}>
+                      <span className="drift-field">{drift.field}</span>
+                      <span className="drift-expected">Expected: <strong>{drift.expected}</strong></span>
+                      <span className="drift-arrow">→</span>
+                      <span className="drift-found">Found: <strong>{drift.found}</strong></span>
+                      <span className={`drift-badge ${drift.severity}`}>{drift.severity.toUpperCase()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA buttons */}
+              <div className="guardian-actions">
+                <button
+                  id="guardian-block-btn"
+                  className="guardian-btn block"
+                  onClick={() => handleGuardianResponse(false)}
+                  type="button"
+                >
+                  🚫 Block Action
+                </button>
+                <button
+                  id="guardian-approve-btn"
+                  className="guardian-btn approve"
+                  onClick={() => handleGuardianResponse(true)}
+                  type="button"
+                >
+                  ✅ Approve Anyway
+                </button>
+              </div>
+
+              {/* Blocked log count */}
+              {guardianBlocked.length > 0 && (
+                <p className="guardian-blocked-log">
+                  🛡 {guardianBlocked.length} action{guardianBlocked.length !== 1 ? 's' : ''} blocked this session
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <PrivacyShieldModal
           isOpen={showPrivacyShield}
