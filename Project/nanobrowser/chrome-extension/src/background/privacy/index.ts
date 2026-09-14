@@ -4,8 +4,8 @@
  * Re-exports everything needed by the agent pipeline.
  */
 
-export { detectPii, hasPii, PiiType } from './piiDetector';
-export type { PiiMatch, PiiDetectionResult } from './piiDetector';
+export { detectPii, hasPii, PiiType, getPiiPatternDefs } from './piiDetector';
+export type { PiiMatch, PiiDetectionResult, PiiPatternDef } from './piiDetector';
 
 export {
   redactText,

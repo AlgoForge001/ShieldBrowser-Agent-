@@ -3,6 +3,7 @@ import type { AgentContext } from '@src/background/agent/types';
 import { wrapUntrustedContent } from '../messages/utils';
 import { createLogger } from '@src/background/log';
 import { redactText, redactUrl, redactTitle, privacyAuditLog, AuditSource } from '@src/background/privacy';
+import { sanitizeScreenshot } from '@src/background/vision/sanitizeScreenshot';
 
 const logger = createLogger('BasePrompt');
 /**
@@ -108,17 +109,37 @@ ${actionResultsDescription}
 `;
 
     if (browserState.screenshot && context.options.useVision) {
-      return new HumanMessage({
-        content: [
-          { type: 'text', text: stateDescription },
-          {
-            // PrivacyShield: Screenshot is passed as-is (visual redaction is a future enhancement)
-            // Text PII is already redacted in the stateDescription above
-            type: 'image_url',
-            image_url: { url: `data:image/jpeg;base64,${browserState.screenshot}` },
-          },
-        ],
-      });
+      try {
+        const sanitized = await sanitizeScreenshot({
+          screenshotB64: browserState.screenshot,
+          mimeType: 'image/jpeg',
+          tabId: browserState.tabId,
+          pageUrl: browserState.url,
+          pageTitle: browserState.title,
+        });
+        return new HumanMessage({
+          content: [
+            { type: 'text', text: stateDescription },
+            {
+              type: 'image_url',
+              image_url: { url: `data:image/png;base64,${sanitized.sanitizedImageB64}` },
+            },
+          ],
+        });
+      } catch (err) {
+        logger.warning(
+          '[PrivacyShield] Visual redaction failed — dropping screenshot (text-only fallback):',
+          err,
+        );
+        privacyAuditLog.record({
+          pageUrl: sanitizedUrl,
+          pageTitle: sanitizedTitle,
+          piiTypes: [],
+          redactedCount: 0,
+          source: AuditSource.VISUAL_FAIL,
+        });
+        return new HumanMessage(stateDescription);
+      }
     }
 
     return new HumanMessage(stateDescription);

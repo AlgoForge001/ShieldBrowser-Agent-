@@ -20,6 +20,9 @@ export type { FaceBox } from './faceDetector';
 export { redactScreenshot } from './visualRedactor';
 export type { RedactionResult, RedactionReport } from './visualRedactor';
 
+export { sanitizeScreenshot } from './sanitizeScreenshot';
+export type { SanitizeScreenshotOptions, SanitizeScreenshotResult } from './sanitizeScreenshot';
+
 // Module 4 — Pipeline Orchestrator
 export { VisionPipeline } from './pipeline';
 export type { PipelineResult, PipelineOptions } from './pipeline';

@@ -9,7 +9,16 @@
  * screenshot-pixel space, ready for Module 2 (Visual Redactor).
  */
 
-export type BboxType = 'face' | 'password' | 'credit_card' | 'aadhaar_field' | 'pan_field' | 'otp_field' | 'pii_text';
+export type BboxType =
+  | 'face'
+  | 'password'
+  | 'credit_card'
+  | 'aadhaar_field'
+  | 'pan_field'
+  | 'otp_field'
+  | 'email_field'
+  | 'phone_field'
+  | 'pii_text';
 
 export interface VisualBbox {
   x: number;
@@ -18,12 +27,15 @@ export interface VisualBbox {
   h: number;
   type: BboxType;
   confidence: number; // 0-1
+  /** Concrete PII class for pii_text / field boxes (audit log). */
+  piiType?: string;
 }
 
 export interface PiiDetectionReport {
   bboxes: VisualBbox[];
   facesFound: number;
   domFieldsFound: number;
+  textPiiFound: number;
   screenshotWidth: number;
   screenshotHeight: number;
 }
@@ -35,7 +47,7 @@ export interface PiiDetectionReport {
  * into VisualBbox format.
  */
 export function domBboxesToVisualBboxes(
-  domBboxes: Array<{ x: number; y: number; w: number; h: number; type: string }>,
+  domBboxes: Array<{ x: number; y: number; w: number; h: number; type: string; piiType?: string }>,
 ): VisualBbox[] {
   return domBboxes.map(b => ({
     x: b.x,
@@ -44,6 +56,7 @@ export function domBboxesToVisualBboxes(
     h: b.h,
     type: b.type as BboxType,
     confidence: 1.0, // DOM is deterministic — full confidence
+    piiType: b.piiType,
   }));
 }
 
@@ -117,7 +130,7 @@ function computeIoU(a: VisualBbox, b: VisualBbox): number {
  * @param screenshotHeight - height of the screenshot in pixels
  */
 export function buildDetectionReport(
-  domBboxes: Array<{ x: number; y: number; w: number; h: number; type: string }>,
+  domBboxes: Array<{ x: number; y: number; w: number; h: number; type: string; piiType?: string }>,
   faceResults: FaceDetectionResult[],
   screenshotWidth: number,
   screenshotHeight: number,
@@ -127,12 +140,42 @@ export function buildDetectionReport(
 
   const all = [...faceVisual, ...domVisual];
   const merged = mergeAndDeduplicate(all);
+  const textPiiFound = domVisual.filter(b => b.type === 'pii_text').length;
+  const domFieldsFound = domVisual.length - textPiiFound;
 
   return {
     bboxes: merged,
     facesFound: faceVisual.length,
-    domFieldsFound: domVisual.length,
+    domFieldsFound,
+    textPiiFound,
     screenshotWidth,
     screenshotHeight,
   };
+}
+
+const FIELD_TYPE_TO_PII: Record<string, string> = {
+  face: 'FACE',
+  password: 'PASSWORD',
+  credit_card: 'CREDIT_CARD',
+  aadhaar_field: 'AADHAAR',
+  pan_field: 'PAN',
+  otp_field: 'OTP',
+  email_field: 'EMAIL',
+  phone_field: 'PHONE',
+};
+
+/**
+ * Maps visual boxes to Privacy Shield PII type labels for the audit log.
+ */
+export function visualBboxesToPiiTypes(bboxes: VisualBbox[]): string[] {
+  const seen = new Set<string>();
+  for (const bbox of bboxes) {
+    if (bbox.type === 'pii_text' && bbox.piiType) {
+      seen.add(bbox.piiType);
+      continue;
+    }
+    const mapped = FIELD_TYPE_TO_PII[bbox.type];
+    if (mapped) seen.add(mapped);
+  }
+  return Array.from(seen);
 }

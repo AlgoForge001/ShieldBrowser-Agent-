@@ -34,6 +34,10 @@ export enum AuditSource {
   TITLE = 'TITLE',
   /** PII found in action results returned to LLM */
   ACTION_RESULT = 'ACTION_RESULT',
+  /** PII regions redacted from a screenshot before it left the device */
+  VISUAL = 'VISUAL',
+  /** Screenshot could not be sanitized — image was dropped (fail closed) */
+  VISUAL_FAIL = 'VISUAL_FAIL',
 }
 
 export interface AuditSummary {

@@ -22,7 +22,24 @@ export enum PiiType {
   IPV4 = 'IPV4',
   DATE_OF_BIRTH = 'DATE_OF_BIRTH',
   NAME_PREFIX = 'NAME_PREFIX',
+  FACE = 'FACE',
+  PASSWORD = 'PASSWORD',
+  OTP = 'OTP',
 }
+
+export interface PiiPatternDef {
+  type: PiiType;
+  source: string;
+  flags: string;
+}
+
+/** Patterns that over-match on generic pages — skip for visual text boxing. */
+const VISUAL_TEXT_EXCLUDED: ReadonlySet<PiiType> = new Set([
+  PiiType.BANK_ACCOUNT,
+  PiiType.IPV4,
+  PiiType.DATE_OF_BIRTH,
+  PiiType.NAME_PREFIX,
+]);
 
 export interface PiiMatch {
   type: PiiType;
@@ -171,6 +188,9 @@ export function detectPii(text: string): PiiDetectionResult {
     [PiiType.IPV4]: 5,
     [PiiType.DATE_OF_BIRTH]: 4,
     [PiiType.NAME_PREFIX]: 3,
+    [PiiType.PASSWORD]: 10,
+    [PiiType.OTP]: 10,
+    [PiiType.FACE]: 2,
     [PiiType.BANK_ACCOUNT]: 1, // Generic digits lowest priority
   };
 
@@ -209,4 +229,18 @@ export function detectPii(text: string): PiiDetectionResult {
  */
 export function hasPii(text: string): boolean {
   return detectPii(text).hasPii;
+}
+
+/**
+ * Serialisable regex defs for chrome.scripting page injection.
+ * When `forVisualText` is true, generic high-false-positive patterns are omitted.
+ */
+export function getPiiPatternDefs(options?: { forVisualText?: boolean }): PiiPatternDef[] {
+  return PII_PATTERNS.filter(p => !options?.forVisualText || !VISUAL_TEXT_EXCLUDED.has(p.type)).map(
+    ({ type, pattern }) => ({
+      type,
+      source: pattern.source,
+      flags: pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`,
+    }),
+  );
 }
