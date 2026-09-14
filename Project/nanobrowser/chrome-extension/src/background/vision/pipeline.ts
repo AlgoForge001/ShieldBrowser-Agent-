@@ -23,7 +23,7 @@ import { classifyScreen } from './screenClassifier';
 import type { ClassificationResult } from './heuristicClassifier';
 import { processWithServer, checkServerHealth, type AgentProcessResponse } from '../services/serverClient';
 import { executeActions, type ExecutionResult } from '../agent/actions/visionActionExecutor';
-import { redactText } from '../privacy/piiRedactor';
+import { redactText, redactDomContext } from '../privacy/piiRedactor';
 import { SecureVault } from '../privacy/secureVault';
 import { resolveActions } from '../privacy/tokenResolver';
 import type { RedactionReport } from './visualRedactor';
@@ -153,9 +153,18 @@ export class VisionPipeline {
         detectionReport.bboxes,
       );
 
-      // ── Step 7: Redact DOM context text ──────────────────────────────────
+      // ── Step 7: Redact & Sanitize DOM context text (PII + IPI Defense) ──
       const rawDomContext = await this.getDomContext();
-      const domContext = redactText(rawDomContext).redacted;
+      const domRedaction = redactDomContext(rawDomContext);
+      const domContext = domRedaction.redacted;
+      if (domRedaction.ipiResult?.hasInjections) {
+        logger.warning(
+          `[IPI Sanitizer] Defanged ${domRedaction.ipiResult.strippedCount} prompt injection pattern(s): ${domRedaction.ipiResult.detectedPatterns.join(', ')}`,
+        );
+      }
+      if (domRedaction.ipiResult?.zeroWidthCount) {
+        logger.info(`[IPI Sanitizer] Stripped ${domRedaction.ipiResult.zeroWidthCount} invisible zero-width character(s)`);
+      }
 
       // ── Step 8: Send to server ────────────────────────────────────────────
       // Server call is optional — if Ollama is OOM or server is down, return

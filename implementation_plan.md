@@ -650,20 +650,22 @@ The FiShield icon exists in the SidePanel header but is purely decorative. It sh
 ---
 
 ### TASK 3 — Prompt Injection Stripping Pass (IPI Defense — Angle A)
-**Priority: HIGH | Eval Impact: Security/Robustness narrative, unique claim**
+**Priority: HIGH | Eval Impact: Security/Robustness narrative, unique claim | Status: ✅ COMPLETE**
 
-This is ~20 lines of code and is the most powerful zero-cost differentiator.
+This is the most powerful zero-cost differentiator for AI browser agents.
 
-**What to build:**
-- New file: `chrome-extension/src/background/privacy/ipiSanitizer.ts`
-- Strips zero-width unicode characters from DOM-extracted text context (note: Tesseract OCR is NOT implemented — this operates on DOM text, not OCR output).
-- Strips patterns matching `ignore previous`, `you are now`, `system prompt:`, `[INST]`, etc.
-- Wraps all page-derived text in `<UNTRUSTED_PAGE>...</UNTRUSTED_PAGE>` tags before it reaches the server prompt.
-- Called in `privacy/piiRedactor.ts` before the text is included in the server request.
-
-**Files to create/edit:**
-- `chrome-extension/src/background/privacy/ipiSanitizer.ts` **(NEW)**
-- `chrome-extension/src/background/privacy/piiRedactor.ts` — add call to `ipiSanitizer`
+**What was built:**
+- `chrome-extension/src/background/privacy/ipiSanitizer.ts`:
+  - Strips invisible zero-width Unicode characters (`\u200B-\u200D\uFEFF\u2060`, BiDi overrides) used to bypass tokenizers.
+  - Detects and defangs prompt injection patterns (`ignore previous instructions`, `you are now an evil agent`, `system prompt:`, `developer mode activated`, LLM control tokens `[INST]`, `<|im_start|>`, `<<SYS>>`).
+  - Replaces malicious injection substrings with `[BLOCKED_INJECTION]`.
+  - Wraps all page-derived text in `<UNTRUSTED_PAGE>...</UNTRUSTED_PAGE>` boundary tags.
+- `chrome-extension/src/background/privacy/piiRedactor.ts`:
+  - Integrated `ipiSanitizer` into `redactText` and exported `redactDomContext`.
+- `chrome-extension/src/background/vision/pipeline.ts`:
+  - Step 7 runs `redactDomContext(rawDomContext)` and logs detected IPI patterns before sending to server.
+- `chrome-extension/src/background/privacy/__tests__/ipiSanitizer.test.ts`:
+  - 13 comprehensive unit tests covering all bypass attacks, all passing (74/74 passing overall).
 
 ---
 

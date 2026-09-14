@@ -7,12 +7,18 @@
  */
 
 import { detectPii, type PiiDetectionResult, type PiiMatch, PiiType } from './piiDetector';
+import {
+  sanitizePromptInjection,
+  wrapUntrustedContext,
+  type IpiSanitizationResult,
+} from './ipiSanitizer';
 
 export interface RedactionResult {
   original: string;
   redacted: string;
   wasRedacted: boolean;
   detectionResult: PiiDetectionResult;
+  ipiResult?: IpiSanitizationResult;
 }
 
 export interface RedactionStats {
@@ -26,17 +32,34 @@ export interface RedactionStats {
  * Overlapping matches are handled — the earliest/longest match wins.
  *
  * @param text - Raw text to sanitize
+ * @param options - Optional flags for IPI sanitization and untrusted context wrapping
  * @returns RedactionResult with the redacted string and metadata
  */
-export function redactText(text: string): RedactionResult {
-  const detectionResult = detectPii(text);
+export function redactText(
+  text: string,
+  options?: { sanitizeIpi?: boolean; wrapUntrusted?: boolean },
+): RedactionResult {
+  let inputText = text;
+  let ipiResult: IpiSanitizationResult | undefined;
+
+  if (options?.sanitizeIpi) {
+    ipiResult = sanitizePromptInjection(inputText);
+    inputText = ipiResult.sanitized;
+  }
+
+  const detectionResult = detectPii(inputText);
 
   if (!detectionResult.hasPii) {
+    let finalRedacted = inputText;
+    if (options?.wrapUntrusted) {
+      finalRedacted = wrapUntrustedContext(finalRedacted);
+    }
     return {
       original: text,
-      redacted: text,
-      wasRedacted: false,
+      redacted: finalRedacted,
+      wasRedacted: Boolean(ipiResult?.hasInjections),
       detectionResult,
+      ipiResult,
     };
   }
 
@@ -44,7 +67,7 @@ export function redactText(text: string): RedactionResult {
   // We process in reverse order (end → start) to preserve index integrity
   const matches = [...detectionResult.matches].sort((a, b) => b.start - a.start);
 
-  let redacted = text;
+  let redacted = inputText;
   const seenRanges: Array<{ start: number; end: number }> = [];
 
   for (const match of matches) {
@@ -62,12 +85,28 @@ export function redactText(text: string): RedactionResult {
     seenRanges.push({ start: match.start, end: match.end });
   }
 
+  if (options?.wrapUntrusted) {
+    redacted = wrapUntrustedContext(redacted);
+  }
+
   return {
     original: text,
     redacted,
     wasRedacted: true,
     detectionResult,
+    ipiResult,
   };
+}
+
+/**
+ * Convenience helper for untrusted DOM context:
+ * 1. Strips invisible zero-width characters
+ * 2. Defangs Indirect Prompt Injection (IPI) patterns
+ * 3. Redacts detected PII with tokens
+ * 4. Wraps in <UNTRUSTED_PAGE> boundaries
+ */
+export function redactDomContext(rawDomText: string): RedactionResult {
+  return redactText(rawDomText, { sanitizeIpi: true, wrapUntrusted: true });
 }
 
 /**

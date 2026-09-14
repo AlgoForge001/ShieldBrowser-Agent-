@@ -9,6 +9,7 @@ export type { PiiMatch, PiiDetectionResult, PiiPatternDef } from './piiDetector'
 
 export {
   redactText,
+  redactDomContext,
   redactUrl,
   redactTitle,
   redactObjectStrings,
@@ -20,3 +21,16 @@ export type { RedactionResult, RedactionStats } from './piiRedactor';
 
 export { privacyAuditLog, AuditSource } from './auditLog';
 export type { AuditEntry, AuditSummary } from './auditLog';
+
+export { SecureVault } from './secureVault';
+export type { VaultEntry } from './secureVault';
+
+export { TokenResolver } from './tokenResolver';
+
+export {
+  stripZeroWidth,
+  sanitizePromptInjection,
+  wrapUntrustedContext,
+  sanitizeAndWrapDom,
+} from './ipiSanitizer';
+export type { IpiSanitizationResult } from './ipiSanitizer';
