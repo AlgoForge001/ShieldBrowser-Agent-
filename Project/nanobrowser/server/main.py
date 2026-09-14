@@ -50,12 +50,13 @@ app.include_router(verify_router, tags=["Manifest"])
 
 @app.on_event("startup")
 async def startup_event() -> None:
-    from .services.vlm_client import check_ollama_health
-    ok, model = await check_ollama_health()
+    from .services.vlm_client import check_vlm_health
+    ok, model = await check_vlm_health()
     if ok:
-        logger.info("ShieldBrowse server started. Ollama reachable. Model: %s", model or "(auto)")
+        logger.info("ShieldBrowse server started. VLM reachable. Model: %s", model or "(auto)")
     else:
         logger.warning(
-            "ShieldBrowse server started but Ollama is NOT reachable. "
-            "Run: ollama serve   and   ollama pull llava:7b"
+            "ShieldBrowse server started (VLM status: %s). "
+            "Set OPENROUTER_API_KEY or configure local vision provider.",
+            model
         )

@@ -174,3 +174,8 @@ async def check_vlm_health() -> tuple[bool, str]:
             return False, f"HTTP {resp.status_code}"
     except Exception as e:
         return False, str(e)
+
+
+# Backwards compatibility alias
+check_ollama_health = check_vlm_health
+
