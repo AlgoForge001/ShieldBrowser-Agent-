@@ -183,12 +183,27 @@ Individual modules are built; end-to-end wiring and UI need completion.
 
 ---
 
-## 4C — Ollama VLM Model Pull
+## 4C — VLM Backend Setup
+
+> [!NOTE]
+> **OpenRouter is the active VLM backend** — `vlm_client.py` already uses OpenRouter (llama-3.2-11b-vision, free tier). **Ollama is NOT required.** Only set up Ollama if you want to run fully offline without an API key.
+
+### Option A — OpenRouter (Current Default ✅ — Use This)
+
+| Task | How | Status |
+|------|-----|--------|
+| Get a free OpenRouter API key | [openrouter.ai](https://openrouter.ai) → Sign up → Copy API key | 🔲 Confirm key is set |
+| Set the key in server | Create `server/.env` file: `OPENROUTER_API_KEY=your_key_here` | 🔲 Confirm done |
+| Verify VLM is working | `GET http://localhost:8000/health` → should return `{"status": "ok"}` | 🔲 Confirm done |
+
+**Model in use:** `meta-llama/llama-3.2-11b-vision-instruct:free` (free tier, no cost, multimodal)
+
+### Option B — Ollama (Offline Fallback, Optional Only)
 
 | Task | Command | Status |
 |------|---------|--------|
-| Pull llava:7b multimodal model | `ollama pull llava:7b` | 🔲 Confirm pulled |
-| (Alternative) Pull moondream (lighter, faster) | `ollama pull moondream` | 🔲 Confirm pulled |
+| Pull llava:7b (if going offline) | `ollama pull llava:7b` | 🔲 Optional |
+| Pull moondream (lighter, faster) | `ollama pull moondream` | 🔲 Optional |
 
 ---
 
@@ -467,6 +482,136 @@ face / biometric image       → (no label — black/blur only)
 **Files to edit:**
 - `chrome-extension/src/background/vision/visualRedactor.ts` — split rendering logic by `type` (text PII → token label, face/image → plain black)
 - `chrome-extension/src/background/vision/visualPiiDetector.ts` — ensure each bbox carries a `tokenLabel` field alongside `type`
+
+---
+
+### TASK 0.75 — Local Secure Vault + Token Resolver
+**Priority: CRITICAL | Effort: ~60 lines | Eval Impact: Core privacy architecture — makes the whole token system actually work**
+
+> [!IMPORTANT]
+> **The Missing Link:** Task 0.5 makes the AI *see* `<IDENTITY_ID>` instead of the real Aadhaar. But when the AI says "type `<IDENTITY_ID>` in the form field" — who does the actual typing with the real value? This task answers that. Without it, form-filling is completely broken.
+
+**Core Idea:**
+The browser extension maintains a **tab-scoped, in-memory vault** that maps semantic tokens → real PII values. This vault is created **locally** during page scan, and **never leaves the device**. Before executing any AI-generated action, a Token Resolver intercepts it, substitutes the real value, and only then performs the DOM interaction.
+
+```
+                    ┌──────────────────────────────────────────┐
+                    │        LOCAL SECURE VAULT                │
+                    │    (chrome.storage.session — RAM only)   │
+                    │                                          │
+  Page Scan ───────►│  <IDENTITY_ID>  → "123456789012"        │
+  (DOM + heuristic) │  <CREDENTIAL>   → "myP@ssword!"         │
+                    │  <OTP>          → "847291"               │
+                    │  <CARD_NUMBER>  → "4111 1111 1111 1111"  │
+                    └──────────────┬───────────────────────────┘
+                                   │
+                                   │ resolve() — LOCAL ONLY
+                                   ▼
+  AI Action arrives:         Token Resolver
+  {                     ─────────────────────►  {
+    action: "type",                               action: "type",
+    value: "<IDENTITY_ID>"                        value: "123456789012"  ← real
+  }                                             }
+                                                        │
+                                                        ▼
+                                               Actual DOM typing
+                                               (user's real data filled)
+```
+
+**What to build:**
+
+**`chrome-extension/src/background/privacy/secureVault.ts`** *(NEW)*
+```typescript
+// Tab-scoped vault — cleared automatically when tab closes
+// Keys are semantic token strings, values are real PII
+
+export interface VaultEntry {
+  token: string;        // e.g. "<IDENTITY_ID>"
+  realValue: string;    // e.g. "123456789012"
+  fieldSelector: string; // e.g. "input[name='aadhaar']"
+  type: string;         // e.g. "IDENTITY_ID"
+}
+
+export class SecureVault {
+  private static store = new Map<string, string>();
+
+  static populate(entries: VaultEntry[]): void {
+    this.store.clear();
+    for (const e of entries) {
+      this.store.set(e.token, e.realValue);
+    }
+  }
+
+  static resolve(token: string): string {
+    return this.store.get(token) ?? token; // fallback: return token as-is
+  }
+
+  static clear(): void {
+    this.store.clear();
+  }
+}
+```
+
+**`chrome-extension/src/background/privacy/tokenResolver.ts`** *(NEW)*
+```typescript
+import { SecureVault } from './secureVault';
+
+const TOKEN_PATTERN = /^<[A-Z_]+>$/;
+
+export function resolveActionValue(value: string): string {
+  if (TOKEN_PATTERN.test(value.trim())) {
+    return SecureVault.resolve(value.trim());
+  }
+  return value; // not a token — pass through
+}
+
+export function resolveAction(action: { value?: string; [key: string]: unknown }) {
+  if (action.value && typeof action.value === 'string') {
+    action.value = resolveActionValue(action.value);
+  }
+  return action;
+}
+```
+
+**How the vault gets populated (in `pipeline.ts` / `domBboxExtractor.ts`):**
+```typescript
+// After DOM bbox extraction, collect real values BEFORE masking them
+const vaultEntries = detectedFields.map(field => ({
+  token: `<${field.tokenLabel}>`,
+  realValue: field.element.value,  // actual DOM input value
+  fieldSelector: field.selector,
+  type: field.tokenLabel
+}));
+
+SecureVault.populate(vaultEntries);
+// Now proceed with masking / sanitization as usual
+```
+
+**Integration point in `visionActionExecutor.ts`:**
+```typescript
+import { resolveAction } from '../privacy/tokenResolver';
+
+// Just before executing any action:
+const resolvedAction = resolveAction(rawActionFromVLM);
+await executeAction(resolvedAction); // now uses real values
+```
+
+**Security properties of this design:**
+| Property | Guarantee |
+|---|---|
+| Vault storage | `Map<>` in service worker memory — never written to disk |
+| Scope | Tab-scoped — cleared on tab close or session end |
+| Cloud exposure | Zero — AI (OpenRouter) only ever receives tokens |
+| Vault access | Only `tokenResolver.ts` can read — no external API |
+| Fallback | If token not in vault, original token string passed through (safe — won't fill the field with wrong data) |
+
+**Files to create/edit:**
+- `chrome-extension/src/background/privacy/secureVault.ts` **(NEW)**
+- `chrome-extension/src/background/privacy/tokenResolver.ts` **(NEW)**
+- `chrome-extension/src/background/vision/pipeline.ts` — populate vault after DOM extraction, before redaction
+- `chrome-extension/src/background/agent/visionActionExecutor.ts` — call `resolveAction()` before execution
+
+---
 
 ### TASK 1 — Wire Vision Pipeline → SidePanel UI
 **Priority: CRITICAL | Eval Impact: 25% + 20% marks | Demo Risk: HIGHEST**

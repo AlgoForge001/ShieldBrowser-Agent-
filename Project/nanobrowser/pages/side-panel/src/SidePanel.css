@@ -502,3 +502,94 @@ code {
   line-height: 1.4;
 }
 
+/* ─── Task 1+2: Live Shield Status Indicator ────────────────────────────── */
+
+/* Badge showing session PII count on the shield button */
+.shield-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 2px;
+}
+
+/* Shield button scanning state */
+.privacy-shield-btn.shield-scanning {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.6);
+  color: #ca8a04;
+}
+
+/* Pulse dot — idle (green, slow pulse) */
+.pulse-indicator.idle {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulseIdle 2.5s ease-in-out infinite;
+}
+
+/* Pulse dot — scanning (amber, fast pulse) */
+.pulse-indicator.scanning {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #eab308;
+  animation: pulseScanning 0.8s ease-in-out infinite;
+}
+
+@keyframes pulseIdle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes pulseScanning {
+  0%, 100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 6px rgba(234, 179, 8, 0.8); }
+  50% { opacity: 0.6; transform: scale(0.9); box-shadow: 0 0 2px rgba(234, 179, 8, 0.4); }
+}
+
+/* Last scan info row in the modal */
+.privacy-scan-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #94a3b8;
+  margin: 4px 0 8px;
+  padding: 4px 8px;
+  background: rgba(148, 163, 184, 0.08);
+  border-radius: 6px;
+}
+
+/* Scanning pulse animation for modal shield icon */
+.privacy-shield-icon.scanning-pulse {
+  animation: shieldPulse 0.8s ease-in-out infinite;
+  color: #eab308;
+}
+
+@keyframes shieldPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Status dot scanning state (amber) */
+.status-indicator-dot.scanning {
+  background: #eab308;
+  box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4);
+  animation: scanDotPulse 1s ease-in-out infinite;
+}
+
+@keyframes scanDotPulse {
+  0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+}
+

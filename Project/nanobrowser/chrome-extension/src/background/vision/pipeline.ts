@@ -24,6 +24,8 @@ import type { ClassificationResult } from './heuristicClassifier';
 import { processWithServer, checkServerHealth, type AgentProcessResponse } from '../services/serverClient';
 import { executeActions, type ExecutionResult } from '../agent/actions/visionActionExecutor';
 import { redactText } from '../privacy/piiRedactor';
+import { SecureVault } from '../privacy/secureVault';
+import { resolveActions } from '../privacy/tokenResolver';
 import type { RedactionReport } from './visualRedactor';
 import type { PiiDetectionReport } from './visualPiiDetector';
 
@@ -121,6 +123,23 @@ export class VisionPipeline {
 
       const [domBboxes, faceResults] = await Promise.all([domBboxesPromise, facesPromise]);
 
+      // ── Step 4.5: Populate SecureVault BEFORE redaction ───────────────────
+      // Capture real field values from the live DOM NOW (before masking them).
+      // The vault maps semantic tokens → real PII so TokenResolver can
+      // substitute them back during action execution. Vault never leaves device.
+      SecureVault.clear();
+      const vaultEntries = domBboxes
+        .filter(b => b.type !== 'face')
+        .map(b => ({
+          token: `<${domTypeToToken(b.type)}>`,
+          realValue: (b as any).value ?? '',   // real value captured from DOM field
+          fieldSelector: (b as any).selector ?? '',
+          type: domTypeToToken(b.type),
+        }))
+        .filter(e => e.realValue.length > 0);   // only store if field has a value
+      SecureVault.populate(vaultEntries);
+      logger.info(`[SecureVault] Populated with ${vaultEntries.length} entries (tokens: ${SecureVault.getTokens().join(', ')})`);
+
       // ── Step 5: Build detection report ───────────────────────────────────
       // We need screenshot dimensions — parse from blob
       const { width: sw, height: sh } = await this.getImageDimensions(screenshotB64, 'image/jpeg');
@@ -170,8 +189,11 @@ export class VisionPipeline {
       // ── Step 9: Execute actions ───────────────────────────────────────────
       let executionResult: ExecutionResult | undefined;
       if (!skipExecution && serverResponse.actions.length > 0) {
+        // Resolve token values → real PII values before execution
+        // e.g. { value: "<IDENTITY_ID>" } → { value: "123456789012" }
+        const resolvedActions = resolveActions([...serverResponse.actions]);
         const page = await this.browserContext.getCurrentPage();
-        executionResult = await executeActions(serverResponse.actions, page);
+        executionResult = await executeActions(resolvedActions, page);
         logger.info(
           `Executed ${executionResult.actionsSucceeded}/${executionResult.actionsAttempted} actions`,
         );
@@ -195,7 +217,7 @@ export class VisionPipeline {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  private async extractDomBboxes(): Promise<Array<{ x: number; y: number; w: number; h: number; type: string }>> {
+  private async extractDomBboxes(): Promise<Array<{ x: number; y: number; w: number; h: number; type: string; value: string; selector: string }>> {
     try {
       const allTabs = await chrome.tabs.query({ active: true });
       const tab = allTabs.find(t => t.url?.startsWith('http'));
@@ -204,9 +226,9 @@ export class VisionPipeline {
       const results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => {
-          // Inline extraction (same logic as domBboxExtractor.ts but self-contained)
+          // Inline extraction — captures bbox + real field value for SecureVault
           const dpr = window.devicePixelRatio || 1;
-          const out: Array<{ x: number; y: number; w: number; h: number; type: string }> = [];
+          const out: Array<{ x: number; y: number; w: number; h: number; type: string; value: string; selector: string }> = [];
           const SELECTORS = [
             { sel: 'input[type="password"]', type: 'password' },
             { sel: 'input[autocomplete*="cc-number"],input[name*="card"],input[name*="cvv"]', type: 'credit_card' },
@@ -219,7 +241,16 @@ export class VisionPipeline {
               document.querySelectorAll(sel).forEach(el => {
                 const r = el.getBoundingClientRect();
                 if (r.width && r.height) {
-                  out.push({ x: Math.round(r.left * dpr), y: Math.round(r.top * dpr), w: Math.round(r.width * dpr), h: Math.round(r.height * dpr), type });
+                  const inputEl = el as HTMLInputElement;
+                  out.push({
+                    x: Math.round(r.left * dpr),
+                    y: Math.round(r.top * dpr),
+                    w: Math.round(r.width * dpr),
+                    h: Math.round(r.height * dpr),
+                    type,
+                    value: inputEl.value ?? '',   // real PII value — captured for SecureVault
+                    selector: `${sel}`,
+                  });
                 }
               });
             } catch { /* skip bad selectors */ }
@@ -385,3 +416,21 @@ export class VisionPipeline {
   }
 }
 
+// ─── Module-level helpers ────────────────────────────────────────────────────
+
+/**
+ * Maps DOM bbox type string → Privacy Shadow token name.
+ * Used to build vault entries: domTypeToToken('password') → 'CREDENTIAL'
+ */
+function domTypeToToken(type: string): string {
+  const map: Record<string, string> = {
+    password:      'CREDENTIAL',
+    credit_card:   'CARD_NUMBER',
+    aadhaar_field: 'IDENTITY_ID',
+    pan_field:     'TAX_ID',
+    otp_field:     'OTP',
+    email_field:   'EMAIL',
+    phone_field:   'PHONE',
+  };
+  return map[type] ?? 'REDACTED';
+}

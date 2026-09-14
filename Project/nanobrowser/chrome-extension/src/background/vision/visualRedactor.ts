@@ -1,5 +1,5 @@
-﻿/**
- * Visual Redactor — Module 2
+/**
+ * Visual Redactor — Module 2 (Privacy Shadow Edition)
  *
  * Takes a base64 JPEG/PNG screenshot + bounding boxes (from Module 1)
  * and returns a sanitized base64 PNG with sensitive regions obscured.
@@ -7,13 +7,15 @@
  * Uses OffscreenCanvas (available in MV3 service workers).
  *
  * Redaction strategy per bbox type:
- *   face         → pixelate (8×8 block fill)
- *   password     → solid black rectangle
- *   credit_card  → solid black rectangle
- *   aadhaar_field→ solid black rectangle
- *   pan_field    → solid black rectangle
- *   otp_field    → solid black rectangle
- *   pii_text     → solid black rectangle
+ *   face         → pixelate (8×8 block fill) — NO label
+ *   password     → solid black + green <CREDENTIAL> label
+ *   credit_card  → solid black + green <CARD_NUMBER> label
+ *   aadhaar_field→ solid black + green <IDENTITY_ID> label
+ *   pan_field    → solid black + green <TAX_ID> label
+ *   otp_field    → solid black + green <OTP> label
+ *   email_field  → solid black + green <EMAIL> label
+ *   phone_field  → solid black + green <PHONE> label
+ *   pii_text     → solid black + green label based on piiType
  */
 
 import type { VisualBbox } from './visualPiiDetector';
@@ -32,6 +34,59 @@ export interface RedactionReport {
 }
 
 const BLOCK_SIZE = 10; // pixels per pixelation block
+
+/**
+ * Maps bbox type → semantic token label shown to the VLM.
+ * Faces return null (no label — pure visual redaction only).
+ */
+const TYPE_TO_TOKEN: Record<string, string | null> = {
+  face: null,              // no label — black/pixelate only
+  password: 'CREDENTIAL',
+  credit_card: 'CARD_NUMBER',
+  aadhaar_field: 'IDENTITY_ID',
+  pan_field: 'TAX_ID',
+  otp_field: 'OTP',
+  email_field: 'EMAIL',
+  phone_field: 'PHONE',
+  pii_text: 'REDACTED',    // fallback — overridden by piiType below
+};
+
+/**
+ * Maps piiType string (from piiDetector) → token label.
+ */
+const PII_TYPE_TO_TOKEN: Record<string, string> = {
+  AADHAAR: 'IDENTITY_ID',
+  PAN: 'TAX_ID',
+  PASSWORD: 'CREDENTIAL',
+  OTP: 'OTP',
+  CREDIT_CARD: 'CARD_NUMBER',
+  CARD_NUMBER: 'CARD_NUMBER',
+  CVV: 'CARD_SECURITY',
+  EMAIL: 'EMAIL',
+  PHONE: 'PHONE',
+  BANK_ACCOUNT: 'FINANCIAL_ID',
+  UPI_ID: 'FINANCIAL_ID',
+  IFSC: 'FINANCIAL_ID',
+  PASSPORT: 'IDENTITY_ID',
+  VOTER_ID: 'IDENTITY_ID',
+  DRIVING_LICENSE: 'IDENTITY_ID',
+};
+
+/**
+ * Resolves the token label for a given bbox.
+ * Returns null for face regions (no label rendered).
+ */
+function resolveTokenLabel(bbox: VisualBbox): string | null {
+  if (bbox.type === 'face') return null;
+
+  // For pii_text type, use the piiType field for a more specific token
+  if (bbox.type === 'pii_text' && bbox.piiType) {
+    const mapped = PII_TYPE_TO_TOKEN[bbox.piiType.toUpperCase()];
+    if (mapped) return mapped;
+  }
+
+  return TYPE_TO_TOKEN[bbox.type] ?? 'REDACTED';
+}
 
 /**
  * Redacts the given screenshot in-place on an OffscreenCanvas.
@@ -76,10 +131,13 @@ export async function redactScreenshot(
     if (w <= 0 || h <= 0) continue;
 
     if (bbox.type === 'face') {
+      // Faces: pixelate only — no token label
       pixelateFace(ctx, x, y, w, h);
       facesRedacted++;
     } else {
-      solidRedact(ctx, x, y, w, h);
+      // Text PII fields: black box + green semantic token label
+      const tokenLabel = resolveTokenLabel(bbox);
+      solidRedactWithToken(ctx, x, y, w, h, tokenLabel);
       fieldsRedacted++;
     }
 
@@ -112,18 +170,38 @@ export async function redactScreenshot(
 // ─── Redaction helpers ───────────────────────────────────────────────────────
 
 /**
- * Solid black fill — for password fields, PAN, Aadhaar, etc.
+ * Solid black fill + semantic token label overlay (Privacy Shadow).
+ * For password fields, PAN, Aadhaar, OTP, credit cards, etc.
+ *
+ * @param tokenLabel - e.g. 'CREDENTIAL', 'IDENTITY_ID', or null for no label
  */
-function solidRedact(
+function solidRedactWithToken(
   ctx: OffscreenCanvasRenderingContext2D,
   x: number, y: number, w: number, h: number,
+  tokenLabel: string | null,
 ): void {
+  // Black background
   ctx.fillStyle = '#000000';
   ctx.fillRect(x, y, w, h);
+
+  // Green semantic label — only for text PII (not faces)
+  if (tokenLabel) {
+    const label = `<${tokenLabel}>`;
+    const fontSize = Math.max(9, Math.min(Math.floor(h * 0.52), 13));
+    ctx.font = `bold ${fontSize}px monospace`;
+    ctx.fillStyle = '#00E5A0'; // green — visible against black background
+
+    // Measure text and center it in the box
+    const metrics = ctx.measureText(label);
+    const textX = x + Math.max(3, (w - metrics.width) / 2);
+    const textY = y + h * 0.67;
+
+    ctx.fillText(label, textX, textY, w - 6); // maxWidth = w-6 prevents overflow
+  }
 }
 
 /**
- * Pixelation effect — for face regions.
+ * Pixelation effect — for face regions. No label rendered.
  * Samples the average color of each BLOCK_SIZE×BLOCK_SIZE cell and fills it.
  */
 function pixelateFace(

@@ -37,6 +37,10 @@ const SidePanel = () => {
   const [showPrivacyShield, setShowPrivacyShield] = useState(false);
   const [redactedCount, setRedactedCount] = useState(0);
   const [detectedTypes, setDetectedTypes] = useState<string[]>([]);
+  // Vision pipeline live state (Task 1)
+  const [pipelineActive, setPipelineActive] = useState(false);
+  const [sessionRedactedCount, setSessionRedactedCount] = useState(0); // cumulative across scans
+  const [lastScanTime, setLastScanTime] = useState<number | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
@@ -338,6 +342,39 @@ const SidePanel = () => {
           setIsProcessingSpeech(false);
         } else if (message && message.type === 'heartbeat_ack') {
           console.log('Heartbeat acknowledged');
+        } else if (message && message.type === 'vision_task_started') {
+          // Pipeline just started — show active indicator
+          setPipelineActive(true);
+        } else if (message && message.type === 'vision_task_result') {
+          // Pipeline finished — update privacy shield stats
+          setPipelineActive(false);
+          setLastScanTime(Date.now());
+          const result = message.result;
+          if (result) {
+            // Extract redaction counts from result
+            const newRegions: number =
+              result.redactionReport?.totalRegions ??
+              result.detectionReport?.facesFound + result.detectionReport?.domFieldsFound ?? 0;
+
+            // Accumulate across scans this session
+            setSessionRedactedCount(prev => prev + newRegions);
+            setRedactedCount(prev => prev + newRegions);
+
+            // Update detected PII types
+            if (result.detectionReport?.bboxes) {
+              const types = [...new Set<string>(
+                (result.detectionReport.bboxes as Array<{ type: string }>)
+                  .map((b) => b.type)
+                  .filter((t: string) => t !== 'face')
+              )];
+              setDetectedTypes(prev => [...new Set([...prev, ...types])]);
+            }
+
+            // Auto-open the privacy shield modal when PII is found on this scan
+            if (newRegions > 0 && !showPrivacyShield) {
+              setShowPrivacyShield(true);
+            }
+          }
         }
       });
 
@@ -1029,12 +1066,15 @@ const SidePanel = () => {
             <button
               type="button"
               onClick={() => setShowPrivacyShield(true)}
-              className="privacy-shield-btn"
-              title="Open Privacy Shield Dashboard"
+              className={`privacy-shield-btn ${pipelineActive ? 'shield-scanning' : ''}`}
+              title={pipelineActive ? 'Privacy Shield: Scanning...' : `Privacy Shield Active — ${sessionRedactedCount} items masked this session`}
               aria-label="Privacy Shield">
-              <span className="pulse-indicator" />
+              <span className={`pulse-indicator ${pipelineActive ? 'scanning' : 'idle'}`} />
               <FiShield size={13} />
-              <span>Shield Active</span>
+              <span>{pipelineActive ? 'Scanning...' : 'Shield Active'}</span>
+              {sessionRedactedCount > 0 && (
+                <span className="shield-badge">{sessionRedactedCount}</span>
+              )}
             </button>
             {!showHistory && (
               <>
@@ -1075,6 +1115,9 @@ const SidePanel = () => {
           onClose={() => setShowPrivacyShield(false)}
           redactedCount={redactedCount}
           detectedTypes={detectedTypes}
+          pipelineActive={pipelineActive}
+          sessionRedactedCount={sessionRedactedCount}
+          lastScanTime={lastScanTime}
         />
         {showHistory ? (
           <div className="flex-1 overflow-hidden">
