@@ -28,4 +28,10 @@ chrome-extension/public/manifest.json
 .nanobrowser
 .vscode
 .cursor
-*.py
+# python cache & env
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+server/.env

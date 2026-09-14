@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Server Client — Module 4 (fetch wrapper)
  *
  * Sends the sanitized screenshot + task context to the ShieldBrowse
@@ -11,6 +11,8 @@ const logger = createLogger('ServerClient');
 
 export const SERVER_BASE_URL = 'http://localhost:8000';
 
+import type { SignedManifest } from '../privacy/egressSigner';
+
 export interface AgentProcessRequest {
   screenshot: string;          // base64 PNG (no prefix)
   dom_context: string;         // redacted DOM text
@@ -20,6 +22,16 @@ export interface AgentProcessRequest {
     pii_fields_redacted: number;
     total_regions: number;
   };
+  signed_manifest?: SignedManifest;
+}
+
+export interface ManifestReceiptResponse {
+  received: boolean;
+  nonce: string;
+  timestamp: string;
+  region_count: number;
+  frame_hash: string;
+  message?: string;
 }
 
 export interface AgentAction {
@@ -77,4 +89,26 @@ export async function processWithServer(
   const data = (await response.json()) as AgentProcessResponse;
   logger.info(`Server returned ${data.actions.length} action(s) via ${data.model_used}`);
   return data;
+}
+
+/**
+ * Submits the signed egress manifest to the server's audit receipt endpoint.
+ */
+export async function verifyManifestWithServer(
+  manifest: SignedManifest,
+  timeoutMs = 10_000,
+): Promise<ManifestReceiptResponse> {
+  const response = await fetch(`${SERVER_BASE_URL}/agent/verify-manifest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(manifest),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Manifest verification error ${response.status}: ${text}`);
+  }
+
+  return (await response.json()) as ManifestReceiptResponse;
 }

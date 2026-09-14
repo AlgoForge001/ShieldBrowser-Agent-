@@ -34,3 +34,6 @@ export {
   sanitizeAndWrapDom,
 } from './ipiSanitizer';
 export type { IpiSanitizationResult } from './ipiSanitizer';
+
+export { EgressSigner, signRedactedFrame } from './egressSigner';
+export type { SignedManifest, RedactedRegionInfo } from './egressSigner';

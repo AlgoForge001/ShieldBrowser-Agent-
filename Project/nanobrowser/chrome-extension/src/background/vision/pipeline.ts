@@ -20,13 +20,18 @@ import { buildDetectionReport } from './visualPiiDetector';
 import { redactScreenshot } from './visualRedactor';
 import { detectFaces } from './faceDetector';
 import { classifyScreen } from './screenClassifier';
-import type { ClassificationResult } from './heuristicClassifier';
-import { processWithServer, checkServerHealth, type AgentProcessResponse } from '../services/serverClient';
+import {
+  processWithServer,
+  checkServerHealth,
+  verifyManifestWithServer,
+  type AgentProcessResponse,
+} from '../services/serverClient';
 import { executeActions, setAlertBroadcaster, type ExecutionResult } from '../agent/actions/visionActionExecutor';
 import type { GuardianAlertPayload } from '../agent/actions/liveActionGuardian';
 import { redactText, redactDomContext } from '../privacy/piiRedactor';
 import { SecureVault } from '../privacy/secureVault';
 import { resolveActions } from '../privacy/tokenResolver';
+import { signRedactedFrame, type SignedManifest } from '../privacy/egressSigner';
 import type { RedactionReport } from './visualRedactor';
 import type { PiiDetectionReport } from './visualPiiDetector';
 
@@ -38,6 +43,7 @@ export interface PipelineResult {
   classification?: ClassificationResult;  // NEW: screen classification result
   detectionReport?: PiiDetectionReport;
   redactionReport?: RedactionReport;
+  signedManifest?: SignedManifest;
   serverResponse?: AgentProcessResponse;
   executionResult?: ExecutionResult;
   durationMs: number;
@@ -164,6 +170,31 @@ export class VisionPipeline {
         detectionReport.bboxes,
       );
 
+      // ── Step 6.5: Cryptographic Egress Attestation (Signed Manifest) ──────
+      let signedManifest: SignedManifest | undefined;
+      try {
+        signedManifest = await signRedactedFrame(
+          sanitizedImageB64,
+          detectionReport.bboxes.map(b => ({
+            x: b.x,
+            y: b.y,
+            width: b.width,
+            height: b.height,
+            type: b.type,
+          })),
+        );
+        logger.info(
+          `[EgressSigner] 🛡️ Frame signed with ECDSA P-256 (hash: ${signedManifest.frameHash.slice(0, 12)}..., nonce: ${signedManifest.nonce})`,
+        );
+
+        // Optional receipt ping to verify-manifest endpoint (manifest-aware server)
+        verifyManifestWithServer(signedManifest).catch(err => {
+          logger.info('[EgressSigner] Manifest receipt ping:', err instanceof Error ? err.message : String(err));
+        });
+      } catch (err) {
+        logger.warning('[EgressSigner] Signing failed (non-fatal):', err instanceof Error ? err.message : String(err));
+      }
+
       // ── Step 7: Redact & Sanitize DOM context text (PII + IPI Defense) ──
       const rawDomContext = await this.getDomContext();
       const domRedaction = redactDomContext(rawDomContext);
@@ -191,6 +222,7 @@ export class VisionPipeline {
             pii_fields_redacted: redactionReport.fieldsRedacted,
             total_regions: redactionReport.totalRegions,
           },
+          signed_manifest: signedManifest,
         });
       } catch (serverErr) {
         logger.warning('Server step failed (non-fatal):', serverErr instanceof Error ? serverErr.message : String(serverErr));
@@ -200,6 +232,7 @@ export class VisionPipeline {
           classification,
           detectionReport,
           redactionReport,
+          signedManifest,
           serverResponse: undefined,
           executionResult: undefined,
           durationMs: Date.now() - t0,
@@ -224,6 +257,7 @@ export class VisionPipeline {
         classification,
         detectionReport,
         redactionReport,
+        signedManifest,
         serverResponse,
         executionResult,
         durationMs: Date.now() - t0,
