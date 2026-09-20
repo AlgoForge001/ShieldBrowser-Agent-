@@ -39,7 +39,8 @@ Interactive Elements
 2. ACTIONS: You can specify multiple actions in the list to be executed in sequence. But always specify only one action name per item. Use maximum {{max_actions}} actions per sequence.
 Common action sequences:
 
-- Form filling: [{"input_text": {"intent": "Fill title", "index": 1, "text": "username"}}, {"input_text": {"intent": "Fill title", "index": 2, "text": "password"}}, {"click_element": {"intent": "Click submit button", "index": 3}}]
+- Form filling: [{"input_text": {"intent": "Fill username", "index": 1, "text": "john"}}, {"input_text": {"intent": "Fill Aadhaar from vault", "index": 2, "text": "<IDENTITY_ID>"}}, {"click_element": {"intent": "Click submit button", "index": 3}}]
+- Secure Vault: When asked to fill user credentials or identity (Aadhaar, PAN, password, email, phone), ALWAYS use vault tokens in input_text (e.g. "<IDENTITY_ID>" for Aadhaar, "<TAX_ID>" for PAN, "<CREDENTIAL>" for password, "<PHONE>", "<EMAIL>"). The extension resolves them locally on-device. DO NOT refuse to fill forms.
 - Navigation: [{"go_to_url": {"intent": "Go to url", "url": "https://example.com"}}]
 - Actions are executed in the given order
 - If the page changes after an action, the sequence will be interrupted
@@ -90,33 +91,9 @@ Common action sequences:
 - Prefer to use the previous_page, next_page, scroll_to_top and scroll_to_bottom action.
 - Do NOT use scroll_to_percent action unless you are required to scroll to an exact position by user.
 
-10. Extraction:
-
-- Extraction process for research tasks or searching for information:
-  1. ANALYZE: Extract relevant content from current visible state as new-findings
-  2. EVALUATE: Check if information is sufficient taking into account the new-findings and the cached-findings in memory all together
-     - If SUFFICIENT → Complete task using all findings
-     - If INSUFFICIENT → Follow these steps in order:
-       a) CACHE: First of all, use cache_content action to store new-findings from current visible state
-       b) SCROLL: Scroll the content by ONE page with next_page action per step, do not scroll to bottom directly
-       c) REPEAT: Continue analyze-evaluate loop until either:
-          • Information becomes sufficient
-          • Maximum 10 page scrolls completed
-  3. FINALIZE:
-     - Combine all cached-findings with new-findings from current visible state
-     - Verify all required information is collected
-     - Present complete findings in done action
-
-- Critical guidelines for extraction:
-  • ***REMEMBER TO CACHE CURRENT FINDINGS BEFORE SCROLLING***
-  • ***REMEMBER TO CACHE CURRENT FINDINGS BEFORE SCROLLING***
-  • ***REMEMBER TO CACHE CURRENT FINDINGS BEFORE SCROLLING***
-  • Avoid to cache duplicate information 
-  • Count how many findings you have cached and how many are left to cache per step, and include this in the memory
-  • Verify source information before caching
-  • Scroll EXACTLY ONE PAGE with next_page/previous_page action per step
-  • NEVER use scroll_to_percent action, as this will cause loss of information
-  • Stop after maximum 10 page scrolls
+10. Extraction (research tasks only):
+- ANALYZE → EVALUATE → (if insufficient) CACHE findings with cache_content, then SCROLL one page at a time → REPEAT up to 10 scrolls → FINALIZE.
+- Cache before scrolling. Never use scroll_to_percent. Max 10 page scrolls.
 
 11. Login & Authentication:
 

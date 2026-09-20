@@ -37,7 +37,7 @@ interface CredentialEntry {
 interface CredentialVaultModalProps {
   isOpen: boolean;
   onClose: () => void;
-  port: chrome.runtime.Port | null;
+  port?: chrome.runtime.Port | null;
   /** Tokens the last vision scan resolved — used in Trust Proof tab */
   lastScanTokens?: string[];
   /** Total PII regions from last scan */
@@ -81,19 +81,22 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // ─── Load credentials via background port ─────────────────────────────────
+  // ─── Load credentials via chrome.runtime.sendMessage ───────────────────────
   const loadCredentials = useCallback(() => {
-    if (!port) return;
-    const handler = (msg: any) => {
-      if (msg.type === 'vault_all') {
-        setEntries(msg.entries ?? []);
-      }
-    };
-    port.onMessage.addListener(handler);
-    port.postMessage({ type: 'vault_get_all' });
-    // Detach listener after 3s (one-shot)
-    setTimeout(() => port.onMessage.removeListener(handler), 3000);
-  }, [port]);
+    try {
+      chrome.runtime.sendMessage({ type: 'vault_get_all' }, (res: any) => {
+        if (chrome.runtime.lastError) {
+          console.warn('[Vault] runtime.lastError on load:', chrome.runtime.lastError.message);
+          return;
+        }
+        if (res && Array.isArray(res.entries)) {
+          setEntries(res.entries);
+        }
+      });
+    } catch (e) {
+      console.error('[Vault] load error:', e);
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -105,7 +108,6 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
 
   // ─── Save credential ───────────────────────────────────────────────────────
   const handleSave = () => {
-    if (!port) return;
     if (!formLabel.trim() || !formValue.trim()) {
       setError('Label and value are required.');
       return;
@@ -113,48 +115,66 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
     setIsSaving(true);
     setError(null);
 
-    const handler = (msg: any) => {
-      if (msg.type === 'vault_saved') {
-        setEntries(prev => {
-          const idx = prev.findIndex(e => e.id === msg.entry.id);
-          if (idx >= 0) {
-            const next = [...prev];
-            next[idx] = msg.entry;
-            return next;
+    try {
+      chrome.runtime.sendMessage(
+        {
+          type: 'vault_save',
+          label: formLabel.trim(),
+          tokenType: formTokenType,
+          value: formValue.trim(),
+        },
+        (res: any) => {
+          setIsSaving(false);
+          if (chrome.runtime.lastError) {
+            setError(chrome.runtime.lastError.message || 'Failed to communicate with background service');
+            return;
           }
-          return [...prev, msg.entry];
-        });
-        setSaveSuccess(true);
-        setIsSaving(false);
-        setFormLabel('');
-        setFormValue('');
-        setShowAddForm(false);
-        setTimeout(() => setSaveSuccess(false), 2500);
-      } else if (msg.type === 'error') {
-        setError(msg.error);
-        setIsSaving(false);
-      }
-      port.onMessage.removeListener(handler);
-    };
-    port.onMessage.addListener(handler);
-    port.postMessage({ type: 'vault_save', label: formLabel.trim(), tokenType: formTokenType, value: formValue });
+          if (res?.success && res.entry) {
+            setEntries(prev => {
+              const idx = prev.findIndex(e => e.id === res.entry.id);
+              if (idx >= 0) {
+                const next = [...prev];
+                next[idx] = res.entry;
+                return next;
+              }
+              return [...prev, res.entry];
+            });
+            setSaveSuccess(true);
+            setFormLabel('');
+            setFormValue('');
+            setShowAddForm(false);
+            setTimeout(() => setSaveSuccess(false), 2500);
+          } else {
+            setError(res?.error || 'Failed to save credential');
+          }
+        },
+      );
+    } catch (e: any) {
+      setIsSaving(false);
+      setError(e instanceof Error ? e.message : 'Failed to save credential');
+    }
   };
 
   // ─── Delete credential ─────────────────────────────────────────────────────
   const handleDelete = (id: string) => {
-    if (!port) return;
     setDeletingId(id);
-    const handler = (msg: any) => {
-      if (msg.type === 'vault_deleted' && msg.id === id) {
-        setEntries(prev => prev.filter(e => e.id !== id));
+    try {
+      chrome.runtime.sendMessage({ type: 'vault_delete', id }, (res: any) => {
         setDeletingId(null);
-      } else if (msg.type === 'error') {
-        setDeletingId(null);
-      }
-      port.onMessage.removeListener(handler);
-    };
-    port.onMessage.addListener(handler);
-    port.postMessage({ type: 'vault_delete', id });
+        if (chrome.runtime.lastError) {
+          console.warn('[Vault] delete error:', chrome.runtime.lastError.message);
+          return;
+        }
+        if (res?.success) {
+          setEntries(prev => prev.filter(e => e.id !== id));
+        } else {
+          setError(res?.error || 'Failed to delete credential');
+        }
+      });
+    } catch (e) {
+      setDeletingId(null);
+      console.error('[Vault] delete error:', e);
+    }
   };
 
   if (!isOpen) return null;

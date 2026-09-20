@@ -25,6 +25,7 @@ import { chatHistoryStore } from '@extension/storage/lib/chat';
 import type { AgentStepHistory } from './history';
 import type { GeneralSettingsConfig } from '@extension/storage';
 import { analytics } from '../services/analytics';
+import { SecureVault } from '../privacy/secureVault';
 
 const logger = createLogger('Executor');
 
@@ -131,6 +132,15 @@ export class Executor {
    */
   async execute(): Promise<void> {
     logger.info(`🚀 Executing task: ${this.tasks[this.tasks.length - 1]}`);
+
+    // PrivacyShield: Load user's encrypted credentials into SecureVault for token resolution
+    try {
+      await SecureVault.loadFromCredentialStore();
+      logger.info(`[Executor] SecureVault loaded (${SecureVault.size()} tokens available)`);
+    } catch (err) {
+      logger.warning('[Executor] Failed to initialize SecureVault:', err);
+    }
+
     // reset the step counter
     const context = this.context;
     context.nSteps = 0;

@@ -16,8 +16,8 @@
 
 import { SecureVault } from './secureVault';
 
-/** Matches semantic tokens like <IDENTITY_ID>, <CREDENTIAL>, <OTP>, etc. */
-const TOKEN_PATTERN = /^<[A-Z][A-Z0-9_]*>$/;
+/** Matches semantic tokens like <IDENTITY_ID>, <CREDENTIAL>, <OTP>, <Aadhaar>, etc. */
+const TOKEN_PATTERN = /^<[a-zA-Z][a-zA-Z0-9_]*>$/;
 
 /**
  * Returns true if the string is a Privacy Shadow semantic token.
@@ -36,10 +36,12 @@ export function isToken(value: string): boolean {
 export function resolveValue(value: string): string {
   const trimmed = value.trim();
   if (isToken(trimmed)) {
-    const resolved = SecureVault.resolve(trimmed);
-    // If vault didn't have it, resolved === trimmed (token string)
-    // That's a safe fallback — the form field won't get filled with wrong data
-    return resolved;
+    const normalized = `<${trimmed.slice(1, -1).toUpperCase()}>`;
+    const resolved = SecureVault.resolve(normalized);
+    if (resolved !== normalized) {
+      return resolved;
+    }
+    return SecureVault.resolve(trimmed);
   }
   return value;
 }

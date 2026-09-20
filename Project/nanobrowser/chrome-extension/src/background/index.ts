@@ -126,11 +126,51 @@ analyticsSettingsStore.subscribe(() => {
   });
 });
 
-// Listen for simple messages (e.g., from options page)
-chrome.runtime.onMessage.addListener(() => {
-  // Handle other message types if needed in the future
-  // Return false if response is not sent asynchronously
-  // return false;
+// Listen for simple messages (e.g., from options page or vault modal)
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type === 'vault_get_all') {
+    credentialStore.getAll()
+      .then(entries => sendResponse({ success: true, entries }))
+      .catch(err => sendResponse({ success: false, error: err instanceof Error ? err.message : 'Failed to load vault' }));
+    return true; // asynchronous
+  }
+
+  if (message?.type === 'vault_save') {
+    const { label, tokenType, value: credValue, existingId } = message as {
+      label: string;
+      tokenType: TokenType;
+      value: string;
+      existingId?: string;
+    };
+    if (!label || !tokenType || !credValue) {
+      sendResponse({ success: false, error: 'vault_save: label, tokenType, and value are required' });
+      return false;
+    }
+    credentialStore.save(label, tokenType, credValue, existingId)
+      .then(saved => {
+        logger.info(`[Vault] Credential saved via onMessage: ${label} (${tokenType}) id=${saved.id}`);
+        sendResponse({ success: true, entry: saved });
+      })
+      .catch(err => sendResponse({ success: false, error: err instanceof Error ? err.message : 'Failed to save credential' }));
+    return true; // asynchronous
+  }
+
+  if (message?.type === 'vault_delete') {
+    const { id: credId } = message as { id: string };
+    if (!credId) {
+      sendResponse({ success: false, error: 'vault_delete: id is required' });
+      return false;
+    }
+    credentialStore.delete(credId)
+      .then(() => {
+        logger.info(`[Vault] Credential deleted via onMessage: ${credId}`);
+        sendResponse({ success: true, id: credId });
+      })
+      .catch(err => sendResponse({ success: false, error: err instanceof Error ? err.message : 'Failed to delete credential' }));
+    return true; // asynchronous
+  }
+
+  return false;
 });
 
 // Setup connection listener for long-lived connections (e.g., side panel)

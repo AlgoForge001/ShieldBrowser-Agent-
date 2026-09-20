@@ -105,6 +105,16 @@ export async function sanitizeScreenshot(options: SanitizeScreenshotOptions): Pr
       `(faces=${redactionReport.facesRedacted}, fields=${redactionReport.fieldsRedacted})`,
   );
 
+  // Inspection helper: save last sanitized screenshot so user/developer can verify the exact image sent to server
+  try {
+    chrome.storage.local.set({
+      shieldbrowse_last_sanitized_image: `data:image/png;base64,${sanitizedImageB64}`,
+      shieldbrowse_last_redaction_report: redactionReport,
+    });
+  } catch {
+    // Non-fatal if storage write fails
+  }
+
   return {
     sanitizedImageB64,
     mimeType: 'image/png',

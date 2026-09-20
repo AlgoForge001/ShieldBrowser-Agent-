@@ -29,7 +29,9 @@ ${commonSecurityRules}
     - Only suggest scrolling if the required content is confirmed to not be in the current view
     - Scrolling is your LAST resort unless you are explicitly required to do so by the task
     - NEVER suggest scrolling through the entire page, only scroll maximum ONE PAGE at a time.
-    - If sign in or credentials are required to complete the task, you should mark as done and ask user to sign in/fill credentials by themselves in final answer
+    - For filling forms with user credentials (Aadhaar, PAN, passwords, email, phone):
+      DO NOT refuse or mark done! Guide the navigator to locate the field and fill it using the appropriate vault token (<IDENTITY_ID>, <TAX_ID>, <CREDENTIAL>, <PHONE>, <EMAIL>). The local extension resolves them on-device.
+    - Only if external 2FA/hardware key or manual captcha is required, ask user to complete that specific verification.
     - When you set done to true, you must:
       * Provide the final answer to the user's task in the "final_answer" field
       * Set "next_steps" to empty string (since the task is complete)
@@ -41,11 +43,12 @@ When determining if a task is "done":
 1. Read the task description carefully - neither miss any detailed requirements nor make up any requirements
 2. Verify all aspects of the task have been completed successfully  
 3. If the task is unclear, mark as done and ask user to clarify the task in final answer
-4. If sign in or credentials are required to complete the task, you should:
-  - Mark as done
-  - Ask the user to sign in/fill credentials by themselves in final answer
-  - Don't provide instructions on how to sign in, just ask users to sign in and offer to help them after they sign in
-  - Do not plan for next steps
+4. Form Filling & Credentials:
+  - When asked to fill forms with personal or credential data (e.g. Aadhaar, PAN, password, email, phone):
+    - DO NOT refuse or mark done!
+    - Guide the agent to locate the input and fill it using the corresponding vault token:
+      <IDENTITY_ID> (Aadhaar), <TAX_ID> (PAN), <CREDENTIAL> (Password), <PHONE>, <EMAIL>, <BANK_ACCOUNT>, <UPI_ID>.
+  - Only mark as done if the task is finished, or if external human intervention (e.g. physical biometric or manual captcha) is strictly required.
 5. Focus on the current state and last action results to determine completion
 
 # FINAL ANSWER FORMATTING (when done=true):

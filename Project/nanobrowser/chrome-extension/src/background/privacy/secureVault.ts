@@ -63,14 +63,19 @@ export class SecureVault {
    * @returns real value or token string as fallback
    */
   static resolve(token: string): string {
-    return this.store.get(token) ?? token;
+    const direct = this.store.get(token);
+    if (direct !== undefined) return direct;
+    const upper = token.toUpperCase();
+    const upperMatch = this.store.get(upper);
+    if (upperMatch !== undefined) return upperMatch;
+    return token;
   }
 
   /**
    * Checks if a given token exists in the vault.
    */
   static has(token: string): boolean {
-    return this.store.has(token);
+    return this.store.has(token) || this.store.has(token.toUpperCase());
   }
 
   /**
@@ -106,11 +111,39 @@ export class SecureVault {
       const allEntries = await getAllCredentials();
       for (const entry of allEntries) {
         const token = `<${entry.tokenType}>`;
-        // Only add if the DOM scan didn't already capture a live value for this token
+        const realValue = await getDecryptedValue(entry.id);
+        if (!realValue) continue;
+
+        // Add main token if not present
         if (!this.store.has(token)) {
-          const realValue = await getDecryptedValue(entry.id);
-          if (realValue) {
-            this.store.set(token, realValue);
+          this.store.set(token, realValue);
+        }
+
+        // Add common aliases so LLM outputs always match
+        const aliasMap: Record<string, string[]> = {
+          IDENTITY_ID: ['<AADHAAR>', '<AADHAAR_NUMBER>', '<AADHAR>', '<AADHAR_NUMBER>', '<ID_CARD>', '<NATIONAL_ID>'],
+          TAX_ID: ['<PAN>', '<PAN_CARD>', '<PAN_NUMBER>'],
+          CREDENTIAL: ['<PASSWORD>', '<PIN>', '<PASSCODE>'],
+          PHONE: ['<PHONE_NUMBER>', '<MOBILE>', '<MOBILE_NUMBER>'],
+          EMAIL: ['<EMAIL_ADDRESS>'],
+          BANK_ACCOUNT: ['<ACCOUNT_NUMBER>', '<BANK_ACC>'],
+          UPI_ID: ['<UPI>', '<VPA>'],
+          IFSC: ['<IFSC_CODE>'],
+        };
+
+        const aliases = aliasMap[entry.tokenType] || [];
+        for (const alias of aliases) {
+          if (!this.store.has(alias)) {
+            this.store.set(alias, realValue);
+          }
+        }
+
+        // Also add custom label token if available
+        if (entry.label) {
+          const sanitizedLabel = entry.label.trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+          const customToken = `<${sanitizedLabel}>`;
+          if (!this.store.has(customToken)) {
+            this.store.set(customToken, realValue);
           }
         }
       }

@@ -28,6 +28,7 @@ import { createLogger } from '@src/background/log';
 import { ExecutionState, Actors } from '../event/types';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { wrapUntrustedContent } from '../messages/utils';
+import { TokenResolver } from '@src/background/privacy/tokenResolver';
 
 const logger = createLogger('Action');
 
@@ -289,8 +290,18 @@ export class ActionBuilder {
           throw new Error(t('act_errors_elementNotExist', [input.index.toString()]));
         }
 
-        await page.inputTextElementNode(this.context.options.useVision, elementNode, input.text);
-        const msg = t('act_inputText_ok', [input.text, input.index.toString()]);
+        // PrivacyShield: Resolve semantic vault tokens (<IDENTITY_ID>, <CREDENTIAL>, etc.) on-device
+        const rawText = input.text;
+        const resolvedText = TokenResolver.resolveValue(rawText);
+        const wasVaultToken = TokenResolver.isToken(rawText.trim()) && resolvedText !== rawText;
+
+        await page.inputTextElementNode(this.context.options.useVision, elementNode, resolvedText);
+
+        // Never leak real vault secrets back to LLM context/memory
+        const msg = wasVaultToken
+          ? `Filled element ${input.index} using secure vault token [PROTECTED: ${rawText.trim()}]`
+          : t('act_inputText_ok', [input.text, input.index.toString()]);
+
         this.context.emitEvent(Actors.NAVIGATOR, ExecutionState.ACT_OK, msg);
         return new ActionResult({ extractedContent: msg, includeInMemory: true });
       },

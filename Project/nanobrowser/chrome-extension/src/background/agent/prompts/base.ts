@@ -2,7 +2,7 @@ import { HumanMessage, type SystemMessage } from '@langchain/core/messages';
 import type { AgentContext } from '@src/background/agent/types';
 import { wrapUntrustedContent } from '../messages/utils';
 import { createLogger } from '@src/background/log';
-import { redactText, redactUrl, redactTitle, privacyAuditLog, AuditSource } from '@src/background/privacy';
+import { redactText, redactUrl, redactTitle, privacyAuditLog, AuditSource, SecureVault } from '@src/background/privacy';
 import { sanitizeScreenshot } from '@src/background/vision/sanitizeScreenshot';
 
 const logger = createLogger('BasePrompt');
@@ -31,9 +31,11 @@ abstract class BasePrompt {
   async buildBrowserStateUserMessage(context: AgentContext): Promise<HumanMessage> {
     const browserState = await context.browserContext.getState(context.options.useVision);
     const rawElementsText = browserState.elementTree.clickableElementsToString(context.options.includeAttributes);
+    // Token optimization: cap DOM elements to 150 lines max (~600 tokens) to avoid bloat on dense pages
+    const cappedElementsText = rawElementsText.split('\n').slice(0, 150).join('\n');
 
     // PrivacyShield: Redact PII from DOM element text before sending to LLM
-    const elementsRedactionResult = redactText(rawElementsText);
+    const elementsRedactionResult = redactText(cappedElementsText);
     const sanitizedElementsText = elementsRedactionResult.redacted;
 
     let formattedElementsText = '';
@@ -95,6 +97,13 @@ abstract class BasePrompt {
     const otherTabs = browserState.tabs
       .filter(tab => tab.id !== browserState.tabId)
       .map(tab => `- {id: ${tab.id}, url: ${redactUrl(tab.url ?? '')}, title: ${redactTitle(tab.title ?? '')}}`);
+
+    // PrivacyShield: Include active vault tokens so the LLM uses tokens instead of refusing
+    const activeVaultTokens = SecureVault.getTokens();
+    const vaultSection = activeVaultTokens.length > 0
+      ? `\nPrivacy Vault active tokens: ${activeVaultTokens.slice(0, 10).join(', ')}. Use token string (e.g. <IDENTITY_ID>) in input_text. DO NOT refuse to fill forms.`
+      : `\nPrivacy Vault tokens for form filling: <IDENTITY_ID> (Aadhaar), <TAX_ID> (PAN), <CREDENTIAL> (Password), <PHONE>, <EMAIL>. Use token string in input_text.`;
+
     const stateDescription = `
 [Task history memory ends]
 [Current state starts here]
@@ -104,6 +113,7 @@ Other available tabs:
   ${otherTabs.join('\n')}
 Interactive elements from top layer of the current page inside the viewport:
 ${formattedElementsText}
+${vaultSection}
 ${stepInfoDescription}
 ${actionResultsDescription}
 `;
