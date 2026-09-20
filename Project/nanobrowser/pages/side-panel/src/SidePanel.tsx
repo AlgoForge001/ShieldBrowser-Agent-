@@ -72,17 +72,9 @@ const SidePanel = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<number | null>(null);
 
-  // Check for dark mode preference
+  // Force bright/light theme — always disable dark mode
   useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches);
-    };
-
-    darkModeMediaQuery.addEventListener('change', handleChange);
-    return () => darkModeMediaQuery.removeEventListener('change', handleChange);
+    setIsDarkMode(false);
   }, []);
 
   // Check if models are configured
@@ -1098,81 +1090,95 @@ const SidePanel = () => {
   return (
     <div>
       <div
-        className={`flex h-screen flex-col ${isDarkMode ? 'bg-slate-900' : "bg-[url('/bg.jpg')] bg-cover bg-no-repeat"} overflow-hidden border ${isDarkMode ? 'border-sky-800' : 'border-[rgb(186,230,253)]'} rounded-2xl`}>
-        <header className="header relative">
-          <div className="header-logo flex items-center gap-2">
-            {showHistory ? (
+        className="flex h-screen flex-col overflow-hidden border border-sky-200 rounded-2xl"
+        style={{
+          background: 'linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 40%, #f8faff 100%)',
+          containerType: 'inline-size',
+          containerName: 'sidepanel',
+        }}>
+        <header className="header-wrapper">
+          {/* ── Row 1: Logo + Nav Icons ── */}
+          <div className="header-row1">
+            {/* Logo / Back button */}
+            <div className="flex items-center gap-1.5">
+              {showHistory ? (
+                <button
+                  type="button"
+                  onClick={() => handleBackToChat(false)}
+                  className="text-sky-600 hover:text-sky-800 cursor-pointer font-semibold text-sm flex items-center gap-1"
+                  aria-label={t('nav_back_a11y')}>
+                  ← {t('nav_back')}
+                </button>
+              ) : (
+                <>
+                  <img src="/icon-128.png" alt="ShieldBrowser Logo" className="size-5 object-contain flex-shrink-0" />
+                  <span className="text-sm font-bold tracking-tight text-slate-800">
+                    Shield<span className="text-indigo-500">Browser</span>
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Nav icon buttons */}
+            <div className="flex items-center gap-0.5">
+              {!showHistory && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleNewChat}
+                    className="header-icon-btn"
+                    aria-label={t('nav_newChat_a11y')}
+                    title="New Chat">
+                    <PiPlusBold size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLoadHistory}
+                    className="header-icon-btn"
+                    aria-label={t('nav_loadHistory_a11y')}
+                    title="Chat History">
+                    <GrHistory size={15} />
+                  </button>
+                </>
+              )}
               <button
                 type="button"
-                onClick={() => handleBackToChat(false)}
-                className={`${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer font-medium text-sm flex items-center gap-1`}
-                aria-label={t('nav_back_a11y')}>
-                {t('nav_back')}
+                onClick={() => chrome.runtime.openOptionsPage()}
+                className="header-icon-btn"
+                aria-label={t('nav_settings_a11y')}
+                title="Settings">
+                <FiSettings size={15} />
               </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <img src="/icon-128.png" alt="ShieldBrowser Logo" className="size-6 object-contain" />
-                <span className={`text-sm font-bold tracking-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                  Shield<span className="text-indigo-500">Browser</span>
-                </span>
-              </div>
-            )}
+            </div>
           </div>
-          <div className="header-icons">
+
+          {/* ── Row 2: Labeled Status Buttons ── */}
+          <div className="header-row2">
+            {/* Shield Active pill with label */}
             <button
               type="button"
               onClick={() => setShowPrivacyShield(true)}
-              className={`privacy-shield-btn ${pipelineActive ? 'shield-scanning' : ''}`}
-              title={pipelineActive ? 'Privacy Shield: Scanning...' : `Privacy Shield Active — ${sessionRedactedCount} items masked this session`}
+              className={`header-shield-pill ${pipelineActive ? 'shield-scanning' : ''}`}
+              title={pipelineActive ? 'Privacy Shield: Scanning...' : `Privacy Shield — ${sessionRedactedCount} items masked`}
               aria-label="Privacy Shield">
               <span className={`pulse-indicator ${pipelineActive ? 'scanning' : 'idle'}`} />
-              <FiShield size={13} />
-              <span>{pipelineActive ? 'Scanning...' : 'Shield Active'}</span>
+              <FiShield size={11} />
+              <span>{pipelineActive ? 'Scanning…' : 'Shield Active'}</span>
               {sessionRedactedCount > 0 && (
                 <span className="shield-badge">{sessionRedactedCount}</span>
               )}
             </button>
-            {/* 🔑 Personal Credential Vault button */}
+
+            {/* Vault button with label */}
             <button
               type="button"
               id="vault-open-btn"
               onClick={() => setShowVaultModal(true)}
-              className="vault-header-btn"
+              className="header-vault-pill"
               title="Personal Credential Vault — credentials never sent to AI"
               aria-label="Open Credential Vault">
-              <FiKey size={13} />
+              <FiKey size={11} />
               <span>Vault</span>
-            </button>
-            {!showHistory && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleNewChat}
-                  onKeyDown={e => e.key === 'Enter' && handleNewChat()}
-                  className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-                  aria-label={t('nav_newChat_a11y')}
-                  tabIndex={0}>
-                  <PiPlusBold size={20} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLoadHistory}
-                  onKeyDown={e => e.key === 'Enter' && handleLoadHistory()}
-                  className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-                  aria-label={t('nav_loadHistory_a11y')}
-                  tabIndex={0}>
-                  <GrHistory size={20} />
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => chrome.runtime.openOptionsPage()}
-              onKeyDown={e => e.key === 'Enter' && chrome.runtime.openOptionsPage()}
-              className={`header-icon ${isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-400 hover:text-sky-500'} cursor-pointer`}
-              aria-label={t('nav_settings_a11y')}
-              tabIndex={0}>
-              <FiSettings size={20} />
             </button>
           </div>
         </header>
@@ -1354,7 +1360,7 @@ const SidePanel = () => {
                 )}
                 {messages.length > 0 && (
                   <div
-                    className={`scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-2 ${isDarkMode ? 'bg-slate-900/80' : ''}`}>
+                  className="scrollbar-gutter-stable flex-1 overflow-x-hidden overflow-y-scroll scroll-smooth p-2">
                     <MessageList messages={messages} isDarkMode={isDarkMode} />
                     <div ref={messagesEndRef} />
                   </div>
