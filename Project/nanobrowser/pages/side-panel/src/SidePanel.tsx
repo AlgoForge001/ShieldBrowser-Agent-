@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FiSettings, FiShield } from 'react-icons/fi';
+import { FiSettings, FiShield, FiKey } from 'react-icons/fi';
 import { PiPlusBold } from 'react-icons/pi';
 import { GrHistory } from 'react-icons/gr';
 import { type Message, Actors, chatHistoryStore, agentModelStore, generalSettingsStore } from '@extension/storage';
@@ -11,6 +11,7 @@ import ChatInput from './components/ChatInput';
 import ChatHistoryList from './components/ChatHistoryList';
 import BookmarkList from './components/BookmarkList';
 import { PrivacyShieldModal } from './components/PrivacyShieldModal';
+import { CredentialVaultModal } from './components/CredentialVaultModal';
 import { EventType, type AgentEvent, ExecutionState } from './types/event';
 import './SidePanel.css';
 
@@ -41,6 +42,10 @@ const SidePanel = () => {
   const [pipelineActive, setPipelineActive] = useState(false);
   const [sessionRedactedCount, setSessionRedactedCount] = useState(0); // cumulative across scans
   const [lastScanTime, setLastScanTime] = useState<number | null>(null);
+  // Credential Vault state
+  const [showVaultModal, setShowVaultModal] = useState(false);
+  const [lastScanTokens, setLastScanTokens] = useState<string[]>([]); // tokens from last vision scan
+  const [lastScanRegions, setLastScanRegions] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
@@ -379,6 +384,17 @@ const SidePanel = () => {
             // Accumulate across scans this session
             setSessionRedactedCount(prev => prev + newRegions);
             setRedactedCount(prev => prev + newRegions);
+            setLastScanRegions(newRegions);
+
+            // Capture which token types were used — for Trust Proof tab in Vault Modal
+            if (result.detectionReport?.bboxes) {
+              const types = [...new Set<string>(
+                (result.detectionReport.bboxes as Array<{ type: string }>)
+                  .map((b) => `<${b.type.toUpperCase()}>`)
+                  .filter((t: string) => t !== '<FACE>')
+              )];
+              setLastScanTokens(types);
+            }
 
             // Update detected PII types
             if (result.detectionReport?.bboxes) {
@@ -1116,6 +1132,17 @@ const SidePanel = () => {
                 <span className="shield-badge">{sessionRedactedCount}</span>
               )}
             </button>
+            {/* 🔑 Personal Credential Vault button */}
+            <button
+              type="button"
+              id="vault-open-btn"
+              onClick={() => setShowVaultModal(true)}
+              className="vault-header-btn"
+              title="Personal Credential Vault — credentials never sent to AI"
+              aria-label="Open Credential Vault">
+              <FiKey size={13} />
+              <span>Vault</span>
+            </button>
             {!showHistory && (
               <>
                 <button
@@ -1228,6 +1255,15 @@ const SidePanel = () => {
           pipelineActive={pipelineActive}
           sessionRedactedCount={sessionRedactedCount}
           lastScanTime={lastScanTime}
+        />
+        {/* 🔑 Personal Credential Vault Modal */}
+        <CredentialVaultModal
+          isOpen={showVaultModal}
+          onClose={() => setShowVaultModal(false)}
+          port={portRef.current}
+          lastScanTokens={lastScanTokens}
+          lastScanRegions={lastScanRegions}
+          isDarkMode={isDarkMode}
         />
         {showHistory ? (
           <div className="flex-1 overflow-hidden">

@@ -19,7 +19,7 @@ import { createLogger } from '../log';
 import { buildDetectionReport } from './visualPiiDetector';
 import { redactScreenshot } from './visualRedactor';
 import { detectFaces } from './faceDetector';
-import { classifyScreen } from './screenClassifier';
+import { classifyScreen, type ClassificationResult } from './screenClassifier';
 import {
   processWithServer,
   checkServerHealth,
@@ -155,7 +155,11 @@ export class VisionPipeline {
         }))
         .filter(e => e.realValue.length > 0);   // only store if field has a value
       SecureVault.populate(vaultEntries);
-      logger.info(`[SecureVault] Populated with ${vaultEntries.length} entries (tokens: ${SecureVault.getTokens().join(', ')})`);
+      // Also load user's pre-stored credentials (AES-GCM encrypted in chrome.storage.local).
+      // DOM-typed values already set above take priority — stored credentials fill in the gaps.
+      await SecureVault.loadFromCredentialStore();
+      logger.info(`[SecureVault] Ready — ${SecureVault.size()} token(s) in vault (tokens: ${SecureVault.getTokens().join(', ')})`);
+
 
       // ── Step 5: Build detection report ───────────────────────────────────
       // We need screenshot dimensions — parse from blob
@@ -178,8 +182,8 @@ export class VisionPipeline {
           detectionReport.bboxes.map(b => ({
             x: b.x,
             y: b.y,
-            width: b.width,
-            height: b.height,
+            width: b.w,
+            height: b.h,
             type: b.type,
           })),
         );

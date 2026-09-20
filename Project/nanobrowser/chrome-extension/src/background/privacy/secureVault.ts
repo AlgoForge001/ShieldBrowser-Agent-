@@ -3,16 +3,21 @@
  *
  * Maintains a tab-scoped, in-memory mapping of semantic tokens → real PII values.
  *
- * The vault is populated during DOM scan (BEFORE masking) and is used by
- * TokenResolver to substitute real values back into AI-generated actions
+ * Sources (merged in priority order — DOM value > stored credential):
+ *   1. DOM scan values captured live from the page fields (before masking)
+ *   2. User's pre-stored credentials from credentialStore (AES-GCM encrypted)
+ *
+ * Used by TokenResolver to substitute real values back into AI-generated actions
  * immediately before DOM execution.
  *
  * Security properties:
- *   - Stored in service worker memory only (Map<>) — never written to disk
- *   - Tab-scoped: cleared when a new scan begins or vault.clear() is called
- *   - Never sent to server — OpenRouter/VLM only ever receives token strings
+ *   - In-memory only (Map<>) — never written to disk
+ *   - Tab-scoped: cleared at the start of each new scan
+ *   - Never sent to server — VLM only ever receives semantic token strings
  *   - Only tokenResolver.ts can call resolve() — no external API
  */
+
+import { getAllCredentials, getDecryptedValue } from './credentialStore';
 
 export interface VaultEntry {
   /** Semantic token, e.g. "<IDENTITY_ID>" */
@@ -87,5 +92,38 @@ export class SecureVault {
    */
   static getTokens(): string[] {
     return Array.from(this.store.keys());
+  }
+
+  /**
+   * Loads ALL user-stored credentials from the encrypted credentialStore into the
+   * in-memory vault. DOM-captured values take priority — if the vault already has
+   * an entry for a token (from DOM scan), the stored credential does NOT overwrite it.
+   *
+   * Call this AFTER populate() so DOM values win over stored values.
+   */
+  static async loadFromCredentialStore(): Promise<void> {
+    try {
+      const allEntries = await getAllCredentials();
+      for (const entry of allEntries) {
+        const token = `<${entry.tokenType}>`;
+        // Only add if the DOM scan didn't already capture a live value for this token
+        if (!this.store.has(token)) {
+          const realValue = await getDecryptedValue(entry.id);
+          if (realValue) {
+            this.store.set(token, realValue);
+          }
+        }
+      }
+    } catch (err) {
+      // Non-fatal — vault may be empty or key derivation may fail on first run
+      console.warn('[SecureVault] loadFromCredentialStore failed (non-fatal):', err);
+    }
+  }
+
+  /**
+   * Returns true if the vault has any entries (from DOM or credential store).
+   */
+  static isPopulated(): boolean {
+    return this.store.size > 0;
   }
 }

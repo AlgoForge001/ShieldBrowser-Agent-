@@ -21,6 +21,8 @@ import { analytics } from './services/analytics';
 import { VisionPipeline } from './vision/pipeline';
 import { checkServerHealth } from './services/serverClient';
 import { resolveGuardianConfirmation } from './agent/actions/liveActionGuardian';
+import { credentialStore } from './privacy/credentialStore';
+import type { TokenType } from './privacy/credentialStore';
 
 const logger = createLogger('background');
 
@@ -28,6 +30,61 @@ const browserContext = new BrowserContext({});
 let currentExecutor: Executor | null = null;
 let currentPort: chrome.runtime.Port | null = null;
 const SIDE_PANEL_URL = chrome.runtime.getURL('side-panel/index.html');
+
+/**
+ * Runs the full ShieldBrowse Vision Pipeline for any user task.
+ * Called automatically (non-blocking) at the start of every new_task / follow_up_task.
+ * Broadcasts vision_task_started → vision_task_result (or error) to the SidePanel.
+ */
+async function runVisionScanForTask(task: string, port: chrome.runtime.Port): Promise<void> {
+  const pipeline = new VisionPipeline(browserContext);
+  try {
+    port.postMessage({ type: 'vision_task_started' });
+
+    // Pre-capture screenshot via Chrome native API (works without an active Puppeteer session).
+    // Service workers have no "currentWindow" — query all windows for the active http tab.
+    let preScreenshot: string | undefined;
+    try {
+      const allTabs = await chrome.tabs.query({ active: true });
+      const activeTab = allTabs.find(t => t.url?.startsWith('http') && t.windowId);
+      if (activeTab?.windowId) {
+        const dataUrl = await chrome.tabs.captureVisibleTab(activeTab.windowId, { format: 'jpeg', quality: 80 });
+        preScreenshot = dataUrl.replace(/^data:[^;]+;base64,/, '');
+        logger.info('[AutoVision] Screenshot captured via captureVisibleTab ✅');
+      }
+    } catch (screenshotErr) {
+      logger.warning('[AutoVision] captureVisibleTab failed, pipeline will try Puppeteer:', screenshotErr);
+    }
+
+    const result = await pipeline.run(task, {
+      enableFaceDetection: true,
+      enableDomExtraction: true,
+      skipExecution: true,   // Vision scan only — actions are handled by the text executor
+      screenshotB64: preScreenshot,
+      onGuardianAlert: (payload) => {
+        try {
+          port.postMessage(payload);
+          logger.info('[Guardian] Alert broadcast to SidePanel:', payload.checkId);
+        } catch (e) {
+          logger.warning('[Guardian] Failed to broadcast alert to SidePanel:', String(e));
+        }
+      },
+    });
+
+    port.postMessage({ type: 'vision_task_result', result });
+    logger.info(
+      `[AutoVision] Scan complete — ${result.detectionReport?.facesFound ?? 0} faces, ` +
+      `${result.detectionReport?.domFieldsFound ?? 0} PII fields, ` +
+      `${result.redactionReport?.totalRegions ?? 0} regions redacted`,
+    );
+  } catch (err) {
+    // Vision scan failure is non-fatal — log it, don't interrupt the text agent.
+    logger.warning('[AutoVision] Vision scan failed (non-fatal):', err instanceof Error ? err.message : String(err));
+    try {
+      port.postMessage({ type: 'vision_task_result', result: { success: false, error: String(err), durationMs: 0 } });
+    } catch { /* port may have closed */ }
+  }
+}
 
 // Setup side panel behavior
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(error => console.error(error));
@@ -103,6 +160,14 @@ chrome.runtime.onConnect.addListener(port => {
             if (!message.tabId) return port.postMessage({ type: 'error', error: t('bg_errors_noTabId') });
 
             logger.info('new_task', message.tabId, message.task);
+
+            // 🛡️ Auto-fire Vision Pipeline on every task (non-blocking).
+            // Runs in parallel with the text LLM agent — does not delay execution.
+            // skipExecution=true so vision scan only detects/redacts; text agent handles DOM actions.
+            runVisionScanForTask(message.task, port).catch(err =>
+              logger.warning('[AutoVision] Unhandled vision scan error:', String(err))
+            );
+
             currentExecutor = await setupExecutor(message.taskId, message.task, browserContext);
             subscribeToExecutorEvents(currentExecutor);
 
@@ -116,6 +181,11 @@ chrome.runtime.onConnect.addListener(port => {
             if (!message.tabId) return port.postMessage({ type: 'error', error: t('bg_errors_noTabId') });
 
             logger.info('follow_up_task', message.tabId, message.task);
+
+            // 🛡️ Auto-fire Vision Pipeline on every follow-up task too (non-blocking).
+            runVisionScanForTask(message.task, port).catch(err =>
+              logger.warning('[AutoVision] Unhandled vision scan error (follow-up):', String(err))
+            );
 
             // If executor exists, add follow-up task; otherwise initialize new executor seamlessly
             if (currentExecutor) {
@@ -301,6 +371,38 @@ chrome.runtime.onConnect.addListener(port => {
           case 'server_health': {
             const healthy = await checkServerHealth();
             return port.postMessage({ type: 'server_health_result', healthy });
+          }
+
+          // ――― Personal Credential Vault handlers ―――――――――――――――――――――――――――――――――――
+          case 'vault_get_all': {
+            // Returns all credential entries (no decryption — UI only needs hints).
+            const entries = await credentialStore.getAll();
+            return port.postMessage({ type: 'vault_all', entries });
+          }
+
+          case 'vault_save': {
+            // message.label, message.tokenType, message.value, message.existingId (optional)
+            const { label, tokenType, value: credValue, existingId } = message as {
+              label: string;
+              tokenType: TokenType;
+              value: string;
+              existingId?: string;
+            };
+            if (!label || !tokenType || !credValue) {
+              return port.postMessage({ type: 'error', error: 'vault_save: label, tokenType, and value are required' });
+            }
+            const saved = await credentialStore.save(label, tokenType, credValue, existingId);
+            logger.info(`[Vault] Credential saved: ${label} (${tokenType}) id=${saved.id}`);
+            return port.postMessage({ type: 'vault_saved', entry: saved });
+          }
+
+          case 'vault_delete': {
+            // message.id — the credential id to remove
+            const { id: credId } = message as { id: string };
+            if (!credId) return port.postMessage({ type: 'error', error: 'vault_delete: id is required' });
+            await credentialStore.delete(credId);
+            logger.info(`[Vault] Credential deleted: ${credId}`);
+            return port.postMessage({ type: 'vault_deleted', id: credId });
           }
 
           default:

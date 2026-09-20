@@ -787,3 +787,4 @@ Day 5       Slides update (add Future Scope + Guardian)        PM/Design   Half 
 | **Client Resource Utilization (20%)** | Single offscreen doc, quantized CLIP ✅ |
 | **End-to-End Latency (15%)** | Heuristic fast-path + async pipeline ✅ |
 | **Unique Technical Claim** | Signed Manifest (Angle B) + IPI Stripping (Angle A) ✅ |
+

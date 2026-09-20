@@ -37,3 +37,14 @@ export type { IpiSanitizationResult } from './ipiSanitizer';
 
 export { EgressSigner, signRedactedFrame } from './egressSigner';
 export type { SignedManifest, RedactedRegionInfo } from './egressSigner';
+
+export {
+  credentialStore,
+  saveCredential,
+  getAllCredentials,
+  getDecryptedValue,
+  getDecryptedByTokenType,
+  deleteCredential,
+  clearAllCredentials,
+} from './credentialStore';
+export type { CredentialEntry, TokenType } from './credentialStore';

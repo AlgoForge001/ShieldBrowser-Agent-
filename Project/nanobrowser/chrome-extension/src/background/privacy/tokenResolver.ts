@@ -51,7 +51,7 @@ export function resolveValue(value: string): string {
  * @param action - Action object from the VLM server (may have .value field)
  * @returns the same action object with resolved .value (mutated in place)
  */
-export function resolveAction<T extends { value?: string; [key: string]: unknown }>(action: T): T {
+export function resolveAction<T extends { value?: string }>(action: T): T {
   if (action.value && typeof action.value === 'string') {
     action.value = resolveValue(action.value);
   }
@@ -62,9 +62,17 @@ export function resolveAction<T extends { value?: string; [key: string]: unknown
  * Resolves all actions in a list.
  * Returns the same array (mutated in place) with resolved values.
  */
-export function resolveActions<T extends { value?: string; [key: string]: unknown }>(actions: T[]): T[] {
+export function resolveActions<T extends { value?: string }>(actions: T[]): T[] {
   for (const action of actions) {
     resolveAction(action);
   }
   return actions;
 }
+
+export const TokenResolver = {
+  isToken,
+  resolveValue,
+  resolveAction,
+  resolveActions,
+};
+
