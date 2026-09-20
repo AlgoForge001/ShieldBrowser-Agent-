@@ -85,6 +85,7 @@ export async function sanitizeScreenshot(options: SanitizeScreenshotOptions): Pr
     screenshotB64,
     mimeType,
     detectionReport.bboxes,
+    faceResults.length,   // Nuclear fallback: 0 → pixelate large img_element bboxes
   );
 
   if (redactionReport.totalRegions > 0) {
@@ -108,8 +109,17 @@ export async function sanitizeScreenshot(options: SanitizeScreenshotOptions): Pr
   // Inspection helper: save last sanitized screenshot so user/developer can verify the exact image sent to server
   try {
     chrome.storage.local.set({
+      shieldbrowse_last_raw_image: `data:${mimeType};base64,${screenshotB64}`,
       shieldbrowse_last_sanitized_image: `data:image/png;base64,${sanitizedImageB64}`,
       shieldbrowse_last_redaction_report: redactionReport,
+      shieldbrowse_last_detection_bboxes: detectionReport.bboxes,
+      shieldbrowse_last_page_info: {
+        url: pageUrl,
+        title: pageTitle,
+        time: new Date().toLocaleTimeString(),
+        classification: classification?.label,
+        privacyLevel: classification?.privacyLevel,
+      },
     });
   } catch {
     // Non-fatal if storage write fails

@@ -8,6 +8,7 @@
  *
  * Redaction strategy per bbox type:
  *   face         → pixelate (8×8 block fill) — NO label
+ *   img_element  → pixelate when no faces detected (nuclear fallback)
  *   password     → solid black + green <CREDENTIAL> label
  *   credit_card  → solid black + green <CARD_NUMBER> label
  *   aadhaar_field→ solid black + green <IDENTITY_ID> label
@@ -16,7 +17,16 @@
  *   email_field  → solid black + green <EMAIL> label
  *   phone_field  → solid black + green <PHONE> label
  *   pii_text     → solid black + green label based on piiType
+ *
+ * Nuclear Fallback:
+ *   If face detection returns 0 faces AND the page has img_element bboxes
+ *   (from DOM scan) that are large enough to contain a face (>= MIN_FACE_FALLBACK_PX
+ *   in both width and height), those image regions are pixelated as a safety net.
+ *   This guards against TinyFaceDetector failures on real-world web portraits.
  */
+
+/** Minimum px size (w AND h) for an img_element bbox to trigger nuclear fallback pixelation */
+const MIN_FACE_FALLBACK_PX = 80;
 
 import type { VisualBbox } from './visualPiiDetector';
 
@@ -91,14 +101,16 @@ function resolveTokenLabel(bbox: VisualBbox): string | null {
 /**
  * Redacts the given screenshot in-place on an OffscreenCanvas.
  *
- * @param screenshotB64 - Base64-encoded JPEG or PNG (no data: prefix)
- * @param mimeType      - 'image/jpeg' or 'image/png'
- * @param bboxes        - Bounding boxes from Module 1
+ * @param screenshotB64      - Base64-encoded JPEG or PNG (no data: prefix)
+ * @param mimeType           - 'image/jpeg' or 'image/png'
+ * @param bboxes             - Bounding boxes from Module 1
+ * @param facesDetectedByML  - Number of faces found by face-api.js (0 triggers nuclear fallback)
  */
 export async function redactScreenshot(
   screenshotB64: string,
   mimeType: 'image/jpeg' | 'image/png',
   bboxes: VisualBbox[],
+  facesDetectedByML = 0,
 ): Promise<RedactionResult> {
   // 1. Decode base64 → Blob → ImageBitmap
   const binary = atob(screenshotB64);
@@ -121,7 +133,21 @@ export async function redactScreenshot(
   let fieldsRedacted = 0;
   let pixelsCovered = 0;
 
-  for (const bbox of bboxes) {
+  // Nuclear fallback: if face-api found 0 faces but we have img_element bboxes
+  // from the DOM scan that are large enough to contain a face, pixelate those too.
+  // This guards against TinyFaceDetector failures on real-world web portraits.
+  const useNuclearFallback = facesDetectedByML === 0;
+  const effectiveBboxes = useNuclearFallback
+    ? [
+        ...bboxes,
+        // Promote large img_element bboxes to 'face' type for pixelation
+        ...bboxes
+          .filter(b => b.type === 'img_element' && b.w >= MIN_FACE_FALLBACK_PX && b.h >= MIN_FACE_FALLBACK_PX)
+          .map(b => ({ ...b, type: 'face' as const })),
+      ]
+    : bboxes;
+
+  for (const bbox of effectiveBboxes) {
     // Clamp to canvas bounds
     const x = Math.max(0, bbox.x);
     const y = Math.max(0, bbox.y);
@@ -134,6 +160,9 @@ export async function redactScreenshot(
       // Faces: pixelate only — no token label
       pixelateFace(ctx, x, y, w, h);
       facesRedacted++;
+    } else if (bbox.type === 'img_element') {
+      // img_element in non-nuclear mode: skip (already handled above if needed)
+      continue;
     } else {
       // Text PII fields: black box + green semantic token label
       const tokenLabel = resolveTokenLabel(bbox);

@@ -172,6 +172,7 @@ export class VisionPipeline {
         screenshotB64,
         'image/jpeg',
         detectionReport.bboxes,
+        faceResults.length,   // Nuclear fallback: 0 → pixelate large img_element bboxes
       );
 
       // ── Step 6.5: Cryptographic Egress Attestation (Signed Manifest) ──────

@@ -107,6 +107,13 @@ function scanPageForVisualPii(patternDefs: PiiPatternDef[]): PageVisualScanResul
         '[data-face], [data-photo]',
       type: 'face',
     },
+    {
+      // Nuclear fallback: capture ALL visible <img> elements for potential pixelation
+      // when face-api.js fails to detect any faces. The visualRedactor will only
+      // apply these if facesDetectedByML === 0 and the bbox is >= MIN_FACE_FALLBACK_PX.
+      sel: 'img',
+      type: 'img_element',
+    },
   ];
 
   for (const { sel, type, piiType } of SELECTORS) {

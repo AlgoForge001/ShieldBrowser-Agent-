@@ -127,6 +127,15 @@ ${actionResultsDescription}
           pageUrl: browserState.url,
           pageTitle: browserState.title,
         });
+        // PrivacyShield debug: log the exact redaction outcome so we can
+        // verify in the Service Worker console that the pipeline ran correctly.
+        const r = sanitized.redactionReport;
+        logger.info(
+          `[PrivacyShield] ✅ Screenshot sanitized: ${r.facesRedacted} face(s), ` +
+          `${r.fieldsRedacted} PII field(s) redacted out of ${r.totalRegions} total region(s). ` +
+          `Classification: ${sanitized.classification?.label ?? 'skipped'} ` +
+          `(privacyLevel=${sanitized.classification?.privacyLevel ?? 'n/a'})`
+        );
         return new HumanMessage({
           content: [
             { type: 'text', text: stateDescription },

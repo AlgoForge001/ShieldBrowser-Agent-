@@ -19,6 +19,7 @@ import { SpeechToTextService } from './services/speechToText';
 import { injectBuildDomTreeScripts } from './browser/dom/service';
 import { analytics } from './services/analytics';
 import { VisionPipeline } from './vision/pipeline';
+import { sanitizeScreenshot } from './vision/sanitizeScreenshot';
 import { checkServerHealth } from './services/serverClient';
 import { resolveGuardianConfirmation } from './agent/actions/liveActionGuardian';
 import { credentialStore } from './privacy/credentialStore';
@@ -167,6 +168,44 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendResponse({ success: true, id: credId });
       })
       .catch(err => sendResponse({ success: false, error: err instanceof Error ? err.message : 'Failed to delete credential' }));
+    return true; // asynchronous
+  }
+
+  if (message?.type === 'TRIGGER_VISUAL_SCAN') {
+    (async () => {
+      try {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        // Filter out extension internal tabs if possible
+        const targetTab = tabs.find(t => t.url && !t.url.startsWith('chrome-extension://')) || tabs[0];
+        if (!targetTab?.id) {
+          sendResponse({ success: false, error: 'No active web page tab found' });
+          return;
+        }
+
+        const screenshot = await chrome.tabs.captureVisibleTab(targetTab.windowId, { format: 'jpeg', quality: 90 });
+        const sanitized = await sanitizeScreenshot({
+          screenshotB64: screenshot,
+          mimeType: 'image/jpeg',
+          tabId: targetTab.id,
+          pageUrl: targetTab.url,
+          pageTitle: targetTab.title,
+        });
+
+        sendResponse({
+          success: true,
+          rawImage: screenshot,
+          sanitizedImage: `data:image/png;base64,${sanitized.sanitizedImageB64}`,
+          redactionReport: sanitized.redactionReport,
+          detectionReport: sanitized.detectionReport,
+          classification: sanitized.classification,
+          pageUrl: targetTab.url,
+          pageTitle: targetTab.title,
+        });
+      } catch (err) {
+        logger.error('[TRIGGER_VISUAL_SCAN] error:', err);
+        sendResponse({ success: false, error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
     return true; // asynchronous
   }
 

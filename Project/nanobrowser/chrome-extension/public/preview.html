@@ -3,27 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ShieldBrowser — Sanitized Image Inspector</title>
+  <title>ShieldBrowser — Real-Time Visual Privacy Inspector</title>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card: #151c2e;
-      --border: #232f48;
-      --text: #f1f5f9;
+      --bg: #070a12;
+      --card: #101726;
+      --card-border: #1e293b;
+      --text: #f8fafc;
       --muted: #94a3b8;
       --emerald: #10b981;
       --indigo: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --cyan: #06b6d4;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 32px 24px;
+      padding: 24px;
       min-height: 100vh;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
     }
     header {
@@ -31,28 +34,96 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 16px;
     }
-    .title-wrap {
+    .brand {
       display: flex;
       align-items: center;
       gap: 14px;
     }
-    .badge-icon {
-      font-size: 2rem;
-      background: rgba(16, 185, 129, 0.15);
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(99,102,241,0.2));
       border: 1px solid var(--emerald);
-      width: 50px;
-      height: 50px;
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 24px;
     }
-    h1 { font-size: 1.5rem; font-weight: 700; color: #fff; }
-    p.subtitle { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
-    .metrics-bar {
+    h1 { font-size: 1.45rem; font-weight: 700; }
+    p.subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--emerald);
+      color: #022c22;
+    }
+    .btn-primary:hover { background: #34d399; }
+    .btn-secondary {
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-secondary:hover { background: #334155; }
+
+    /* Pipeline Process Steps */
+    .pipeline-stepper {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .step-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      position: relative;
+    }
+    .step-card.active {
+      border-color: var(--emerald);
+      background: rgba(16, 185, 129, 0.05);
+    }
+    .step-num {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--emerald);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .step-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .step-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Metrics Strip */
+    .metrics-strip {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
@@ -60,7 +131,7 @@
     }
     .metric-card {
       background: var(--card);
-      border: 1px solid var(--border);
+      border: 1px solid var(--card-border);
       border-radius: 12px;
       padding: 16px;
       text-align: center;
@@ -68,151 +139,373 @@
     .metric-val {
       font-size: 1.8rem;
       font-weight: 800;
-      color: var(--emerald);
     }
     .metric-lbl {
       color: var(--muted);
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 600;
       text-transform: uppercase;
       margin-top: 4px;
     }
-    .preview-card {
-      background: var(--card);
-      border: 2px solid var(--emerald);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+    /* Comparison Workstation */
+    .view-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
     }
-    .preview-header {
+    .tab-btn {
+      padding: 8px 16px;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--indigo);
+      color: #fff;
+      border-color: var(--indigo);
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .stage-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .stage-card.redacted-card {
+      border: 2px solid var(--emerald);
+    }
+    .stage-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
-    .tag-live {
-      background: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-      border: 1px solid var(--emerald);
-      padding: 4px 10px;
+    .stage-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stage-badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
       border-radius: 9999px;
-      font-size: 0.75rem;
       font-weight: 700;
     }
-    .img-wrap {
+    .badge-raw { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .badge-clean { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+    .image-frame {
       background: #020617;
-      border-radius: 12px;
-      padding: 12px;
-      text-align: center;
-      overflow: auto;
-      max-height: 70vh;
-      border: 1px solid var(--border);
-    }
-    #sanitizedImg {
-      max-width: 100%;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    }
-    .no-img {
-      padding: 60px;
-      color: var(--muted);
-      font-size: 1rem;
-    }
-    .btn {
-      background: var(--indigo);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: inline-flex;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
       align-items: center;
-      gap: 6px;
-      transition: opacity 0.2s;
+      min-height: 380px;
+      border: 1px solid #1e293b;
+      position: relative;
     }
-    .btn:hover { opacity: 0.9; }
+    .image-frame img, .image-frame canvas {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Detected Regions List */
+    .regions-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .regions-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    table.regions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+    table.regions-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: #0b1120;
+      color: var(--muted);
+      border-bottom: 1px solid var(--card-border);
+      font-weight: 600;
+    }
+    table.regions-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #1e293b;
+      font-family: monospace;
+    }
+    .token-chip {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .status-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 8px var(--emerald);
+      margin-right: 6px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <div class="title-wrap">
-        <div class="badge-icon">🛡️</div>
+      <div class="brand">
+        <div class="brand-icon">🛡️</div>
         <div>
-          <h1>ShieldBrowser — Sanitized Image Inspector</h1>
-          <p class="subtitle">Exact visual screenshot payload sent to AI server (Zero-Leakage Proof)</p>
+          <h1>ShieldBrowser — Visual Privacy & Blurring Inspector</h1>
+          <p class="subtitle">Live verification of On-Device Face Pixelation & PII Redaction</p>
         </div>
       </div>
-      <div>
-        <button class="btn" onclick="loadSanitizedImage()">🔄 Refresh</button>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="scanTabBtn" onclick="scanActiveTab()">
+          ⚡ Run Visual Scan on Active Tab
+        </button>
+        <button class="btn btn-secondary" onclick="loadStorageData()">
+          🔄 Load Last Agent Task
+        </button>
       </div>
     </header>
 
-    <div class="metrics-bar">
+    <!-- Pipeline Workflow Cards -->
+    <div class="pipeline-stepper">
+      <div class="step-card active">
+        <div class="step-num">Step 1: Capture</div>
+        <div class="step-title">Page Screen Capture</div>
+        <div class="step-desc">Raw viewport captured locally in memory (MV3 isolated)</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-num">Step 2: Detect</div>
+        <div class="step-title">AI Neural Inference</div>
+        <div class="step-desc">TinyFaceDetector + DOM Scanner locate faces & credentials</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-num">Step 3: Redact</div>
+        <div class="step-title">Offscreen Pixelation</div>
+        <div class="step-desc">Faces mosaic-pixelated; inputs overlaid with green tokens</div>
+      </div>
+      <div class="step-card active">
+        <div class="step-num">Step 4: Egress</div>
+        <div class="step-title">Zero-Leakage Transmit</div>
+        <div class="step-desc">Only sanitized image + tokens ever sent to AI model server</div>
+      </div>
+    </div>
+
+    <!-- Live Metrics -->
+    <div class="metrics-strip">
       <div class="metric-card">
-        <div class="metric-val" id="totalRedacted">0</div>
-        <div class="metric-lbl">Total Regions Redacted</div>
+        <div class="metric-val" id="mTotal" style="color:var(--emerald)">0</div>
+        <div class="metric-lbl">Total Regions Obscured</div>
       </div>
       <div class="metric-card">
-        <div class="metric-val" id="facesRedacted" style="color: #60a5fa;">0</div>
+        <div class="metric-val" id="mFaces" style="color:var(--cyan)">0</div>
         <div class="metric-lbl">Faces Pixelated (AI)</div>
       </div>
       <div class="metric-card">
-        <div class="metric-val" id="fieldsRedacted" style="color: #f59e0b;">0</div>
+        <div class="metric-val" id="mFields" style="color:var(--amber)">0</div>
         <div class="metric-lbl">Sensitive Fields Masked</div>
       </div>
       <div class="metric-card">
-        <div class="metric-val" style="color: var(--emerald);">0%</div>
+        <div class="metric-val" id="mLeakage" style="color:var(--emerald)">0%</div>
         <div class="metric-lbl">Credentials Leaked</div>
       </div>
     </div>
 
-    <div class="preview-card">
-      <div class="preview-header">
-        <span class="tag-live">● VLM SCREENSHOT PAYLOAD</span>
-        <span style="font-size:0.85rem; color:var(--muted);" id="timestampText">Loaded from device storage</span>
+    <!-- Side-by-Side Comparison -->
+    <div class="comparison-grid">
+      <!-- Stage 1: Raw -->
+      <div class="stage-card">
+        <div class="stage-header">
+          <div class="stage-title">
+            <span>1. Raw Screenshot</span>
+          </div>
+          <span class="stage-badge badge-raw">⚠ Unsanitized (Device Only)</span>
+        </div>
+        <div class="image-frame">
+          <img id="rawImg" alt="Raw Screenshot" style="display:none;" />
+          <div id="noRawMsg" style="color:var(--muted); padding:40px; text-align:center;">
+            Click <b>"⚡ Run Visual Scan on Active Tab"</b> or run an agent task!
+          </div>
+        </div>
       </div>
 
-      <div class="img-wrap" id="imgContainer">
-        <div class="no-img" id="noImgNotice">
-          No screenshot found yet. Run an agent task in ShieldBrowser first!
+      <!-- Stage 2: Sanitized -->
+      <div class="stage-card redacted-card">
+        <div class="stage-header">
+          <div class="stage-title">
+            <span class="status-pulse"></span>
+            <span>2. Sanitized Screenshot</span>
+          </div>
+          <span class="stage-badge badge-clean">✓ Safe For AI Server</span>
         </div>
-        <img id="sanitizedImg" style="display:none;" alt="Sanitized Screenshot" />
+        <div class="image-frame">
+          <img id="sanitizedImg" alt="Sanitized Screenshot" style="display:none;" />
+          <div id="noSanitizedMsg" style="color:var(--muted); padding:40px; text-align:center;">
+            Sanitized image will appear here after scan.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Regions Table -->
+    <div class="regions-card">
+      <div class="regions-title">
+        <span>🔍 Detected Visual Bounding Boxes & Redaction Audit Log</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="regions-table">
+          <thead>
+            <tr>
+              <th>Target Region</th>
+              <th>Detection Source</th>
+              <th>Coordinates (X, Y, W, H)</th>
+              <th>Confidence Score</th>
+              <th>Applied Privacy Action</th>
+            </tr>
+          </thead>
+          <tbody id="regionsTbody">
+            <tr>
+              <td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">No scan data yet. Run a scan on any web page to see live detection results.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script>
-    function loadSanitizedImage() {
-      chrome.storage.local.get(['shieldbrowse_last_sanitized_image', 'shieldbrowse_last_redaction_report'], (data) => {
-        const img = document.getElementById('sanitizedImg');
-        const notice = document.getElementById('noImgNotice');
-        const total = document.getElementById('totalRedacted');
-        const faces = document.getElementById('facesRedacted');
-        const fields = document.getElementById('fieldsRedacted');
-        const ts = document.getElementById('timestampText');
+    // ─── Scan Active Tab ────────────────────────────────────────────────────────
+    async function scanActiveTab() {
+      const btn = document.getElementById('scanTabBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ Scanning Active Tab...';
 
-        if (data && data.shieldbrowse_last_sanitized_image) {
-          img.src = data.shieldbrowse_last_sanitized_image;
-          img.style.display = 'inline-block';
-          notice.style.display = 'none';
-          ts.innerText = 'Captured & Sanitized locally on device at ' + new Date().toLocaleTimeString();
+      try {
+        chrome.runtime.sendMessage({ type: 'TRIGGER_VISUAL_SCAN' }, (response) => {
+          btn.disabled = false;
+          btn.innerText = '⚡ Run Visual Scan on Active Tab';
 
-          const report = data.shieldbrowse_last_redaction_report || {};
-          total.innerText = report.totalRegions ?? '1+';
-          faces.innerText = report.facesRedacted ?? '1';
-          fields.innerText = report.fieldsRedacted ?? '3';
-        } else {
-          img.style.display = 'none';
-          notice.style.display = 'block';
+          if (!response || !response.success) {
+            alert('Scan error: ' + (response?.error || 'Could not capture active tab. Please ensure a normal webpage tab is active.'));
+            return;
+          }
+
+          renderResults(response.rawImage, response.sanitizedImage, response.redactionReport, response.detectionReport);
+        });
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = '⚡ Run Visual Scan on Active Tab';
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ─── Load from Chrome Storage ───────────────────────────────────────────────
+    function loadStorageData() {
+      chrome.storage.local.get([
+        'shieldbrowse_last_raw_image',
+        'shieldbrowse_last_sanitized_image',
+        'shieldbrowse_last_redaction_report',
+        'shieldbrowse_last_detection_bboxes',
+      ], (data) => {
+        if (!data || !data.shieldbrowse_last_sanitized_image) {
+          alert('No previous agent screenshot found. Run an agent task or click "⚡ Run Visual Scan on Active Tab"!');
+          return;
         }
+
+        renderResults(
+          data.shieldbrowse_last_raw_image,
+          data.shieldbrowse_last_sanitized_image,
+          data.shieldbrowse_last_redaction_report,
+          { bboxes: data.shieldbrowse_last_detection_bboxes || [] }
+        );
       });
     }
 
-    // Auto load on open
-    document.addEventListener('DOMContentLoaded', loadSanitizedImage);
+    // ─── Render View ───────────────────────────────────────────────────────────
+    function renderResults(rawUrl, sanitizedUrl, redactionReport, detectionReport) {
+      const rawEl = document.getElementById('rawImg');
+      const sanEl = document.getElementById('sanitizedImg');
+      const noRaw = document.getElementById('noRawMsg');
+      const noSan = document.getElementById('noSanitizedMsg');
+
+      if (rawUrl) {
+        rawEl.src = rawUrl;
+        rawEl.style.display = 'block';
+        noRaw.style.display = 'none';
+      }
+
+      if (sanitizedUrl) {
+        sanEl.src = sanitizedUrl;
+        sanEl.style.display = 'block';
+        noSan.style.display = 'none';
+      }
+
+      const rep = redactionReport || {};
+      document.getElementById('mTotal').innerText = rep.totalRegions ?? (detectionReport?.bboxes?.length || 0);
+      document.getElementById('mFaces').innerText = rep.facesRedacted ?? 0;
+      document.getElementById('mFields').innerText = rep.fieldsRedacted ?? 0;
+
+      // Render table
+      const tbody = document.getElementById('regionsTbody');
+      const bboxes = detectionReport?.bboxes || [];
+
+      if (bboxes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#10b981; padding:20px;">✓ Page scanned cleanly — No sensitive PII or faces found in current viewport.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = bboxes.map((b, i) => {
+        const isFace = b.type === 'face';
+        const source = isFace ? 'TensorFlow.js (TinyFaceDetector)' : 'DOM Semantic Scanner';
+        const action = isFace 
+          ? '<span style="color:#38bdf8; font-weight:700;">8×8 Mosaic Pixelation + PrivacyShield Overlay</span>' 
+          : `<span class="token-chip">&lt;${b.token || b.piiType || 'REDACTED'}&gt;</span> Solid Blackout`;
+        const conf = b.confidence ? (Math.round(b.confidence * 100) + '%') : '100% (Deterministic)';
+
+        return `
+          <tr>
+            <td style="font-weight:700; color:${isFace ? '#38bdf8' : '#f59e0b'};">${isFace ? '👤 Human Face Photo' : '🔒 ' + (b.piiType || b.type)}</td>
+            <td style="color:#94a3b8;">${source}</td>
+            <td>x:${b.x}, y:${b.y}, w:${b.w}, h:${b.h}</td>
+            <td style="color:#10b981;">${conf}</td>
+            <td>${action}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Auto-load on page start
+    document.addEventListener('DOMContentLoaded', loadStorageData);
   </script>
 </body>
 </html>
