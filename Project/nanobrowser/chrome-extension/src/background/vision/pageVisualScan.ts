@@ -99,6 +99,14 @@ function scanPageForVisualPii(patternDefs: PiiPatternDef[]): PageVisualScanResul
       type: 'phone_field',
       piiType: 'PHONE',
     },
+    {
+      sel:
+        'img[src*="face" i], img[src*="photo" i], img[src*="avatar" i], img[src*="profile" i], ' +
+        'img[src*="portrait" i], img[alt*="photo" i], img[alt*="citizen" i], img[alt*="face" i], ' +
+        'img[alt*="avatar" i], img[class*="avatar" i], img[class*="profile" i], .profile-section img, ' +
+        '[data-face], [data-photo]',
+      type: 'face',
+    },
   ];
 
   for (const { sel, type, piiType } of SELECTORS) {

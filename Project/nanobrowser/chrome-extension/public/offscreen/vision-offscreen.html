@@ -5,13 +5,14 @@
   <title>Vision Offscreen — Face Detection + Screen Classification</title>
   <!-- Content Security Policy: allow scripts from extension itself and jsdelivr CDN for Transformers.js -->
   <meta http-equiv="Content-Security-Policy"
-        content="script-src 'self' https://cdn.jsdelivr.net https://huggingface.co; connect-src https://huggingface.co https://cdn-lfs.huggingface.co https://cdn.jsdelivr.net;">
+        content="script-src 'self' https://cdn.jsdelivr.net https://huggingface.co; connect-src 'self' chrome-extension: https://huggingface.co https://cdn-lfs.huggingface.co https://cdn.jsdelivr.net;">
 </head>
 <body>
   <!-- Canvas required by face-api.js TinyFaceDetector (TensorFlow.js WebGL backend) -->
   <canvas id="canvas" style="display:none"></canvas>
 
-  <!-- Worker 1: Face Detection (face-api.js) — existing, unchanged -->
+  <!-- Worker 1: Face Detection (face-api.js) -->
+  <script src="face-api.min.js"></script>
   <script src="face-detector-worker.js"></script>
 
   <!-- Worker 2: Screen Classification (CLIP zero-shot via Transformers.js) -->

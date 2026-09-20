@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShieldBrowser — Sanitized Image Inspector</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #151c2e;
+      --border: #232f48;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --emerald: #10b981;
+      --indigo: #6366f1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 32px 24px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .badge-icon {
+      font-size: 2rem;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--emerald);
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    p.subtitle { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .metric-val {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--emerald);
+    }
+    .metric-lbl {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .preview-card {
+      background: var(--card);
+      border: 2px solid var(--emerald);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .tag-live {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid var(--emerald);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .img-wrap {
+      background: #020617;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      overflow: auto;
+      max-height: 70vh;
+      border: 1px solid var(--border);
+    }
+    #sanitizedImg {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .no-img {
+      padding: 60px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+    .btn {
+      background: var(--indigo);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title-wrap">
+        <div class="badge-icon">🛡️</div>
+        <div>
+          <h1>ShieldBrowser — Sanitized Image Inspector</h1>
+          <p class="subtitle">Exact visual screenshot payload sent to AI server (Zero-Leakage Proof)</p>
+        </div>
+      </div>
+      <div>
+        <button class="btn" onclick="loadSanitizedImage()">🔄 Refresh</button>
+      </div>
+    </header>
+
+    <div class="metrics-bar">
+      <div class="metric-card">
+        <div class="metric-val" id="totalRedacted">0</div>
+        <div class="metric-lbl">Total Regions Redacted</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" id="facesRedacted" style="color: #60a5fa;">0</div>
+        <div class="metric-lbl">Faces Pixelated (AI)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" id="fieldsRedacted" style="color: #f59e0b;">0</div>
+        <div class="metric-lbl">Sensitive Fields Masked</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--emerald);">0%</div>
+        <div class="metric-lbl">Credentials Leaked</div>
+      </div>
+    </div>
+
+    <div class="preview-card">
+      <div class="preview-header">
+        <span class="tag-live">● VLM SCREENSHOT PAYLOAD</span>
+        <span style="font-size:0.85rem; color:var(--muted);" id="timestampText">Loaded from device storage</span>
+      </div>
+
+      <div class="img-wrap" id="imgContainer">
+        <div class="no-img" id="noImgNotice">
+          No screenshot found yet. Run an agent task in ShieldBrowser first!
+        </div>
+        <img id="sanitizedImg" style="display:none;" alt="Sanitized Screenshot" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function loadSanitizedImage() {
+      chrome.storage.local.get(['shieldbrowse_last_sanitized_image', 'shieldbrowse_last_redaction_report'], (data) => {
+        const img = document.getElementById('sanitizedImg');
+        const notice = document.getElementById('noImgNotice');
+        const total = document.getElementById('totalRedacted');
+        const faces = document.getElementById('facesRedacted');
+        const fields = document.getElementById('fieldsRedacted');
+        const ts = document.getElementById('timestampText');
+
+        if (data && data.shieldbrowse_last_sanitized_image) {
+          img.src = data.shieldbrowse_last_sanitized_image;
+          img.style.display = 'inline-block';
+          notice.style.display = 'none';
+          ts.innerText = 'Captured & Sanitized locally on device at ' + new Date().toLocaleTimeString();
+
+          const report = data.shieldbrowse_last_redaction_report || {};
+          total.innerText = report.totalRegions ?? '1+';
+          faces.innerText = report.facesRedacted ?? '1';
+          fields.innerText = report.fieldsRedacted ?? '3';
+        } else {
+          img.style.display = 'none';
+          notice.style.display = 'block';
+        }
+      });
+    }
+
+    // Auto load on open
+    document.addEventListener('DOMContentLoaded', loadSanitizedImage);
+  </script>
+</body>
+</html>

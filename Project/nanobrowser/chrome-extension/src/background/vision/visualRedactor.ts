@@ -208,8 +208,9 @@ function pixelateFace(
   ctx: OffscreenCanvasRenderingContext2D,
   x: number, y: number, w: number, h: number,
 ): void {
+  const blockSize = Math.max(12, Math.floor(Math.min(w, h) / 5));
   // Draw the region to a tiny canvas then scale back up
-  const tmpCanvas = new OffscreenCanvas(Math.max(1, Math.floor(w / BLOCK_SIZE)), Math.max(1, Math.floor(h / BLOCK_SIZE)));
+  const tmpCanvas = new OffscreenCanvas(Math.max(1, Math.floor(w / blockSize)), Math.max(1, Math.floor(h / blockSize)));
   const tmpCtx = tmpCanvas.getContext('2d')!;
 
   // Draw small
@@ -219,4 +220,11 @@ function pixelateFace(
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, x, y, w, h);
   ctx.imageSmoothingEnabled = true;
+
+  // Add PrivacyShield tint and border over face region
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
 }
