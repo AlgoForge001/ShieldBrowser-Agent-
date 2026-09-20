@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessage += error.message;
       }
 
-      statusText.textContent = '❌ ' + errorMessage;
+      statusText.textContent = errorMessage;
       statusText.className = 'error';
     }
   });

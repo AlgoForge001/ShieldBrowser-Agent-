@@ -20,7 +20,7 @@ async def agent_process(request: AgentProcessRequest) -> AgentProcessResponse:
     # Log signed manifest if present
     if request.signed_manifest:
         logger.info(
-            "[AUDIT] 📜 Received signed egress manifest: frame_hash=%s... regions=%d nonce=%s sig_len=%d",
+            "[AUDIT] Received signed egress manifest: frame_hash=%s... regions=%d nonce=%s sig_len=%d",
             request.signed_manifest.frame_hash[:16],
             request.signed_manifest.regions_count,
             request.signed_manifest.nonce,

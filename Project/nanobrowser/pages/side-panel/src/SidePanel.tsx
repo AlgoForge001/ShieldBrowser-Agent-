@@ -1234,7 +1234,7 @@ const SidePanel = () => {
                   onClick={() => handleGuardianResponse(false)}
                   type="button"
                 >
-                  🚫 Block Action
+                  <FiSlash size={15} aria-hidden="true" /> Block Action
                 </button>
                 <button
                   id="guardian-approve-btn"
@@ -1242,7 +1242,7 @@ const SidePanel = () => {
                   onClick={() => handleGuardianResponse(true)}
                   type="button"
                 >
-                  ✅ Approve Anyway
+                  <FiCheckCircle size={15} aria-hidden="true" /> Approve Anyway
                 </button>
               </div>
 
@@ -1266,7 +1266,7 @@ const SidePanel = () => {
           sessionRedactedCount={sessionRedactedCount}
           lastScanTime={lastScanTime}
         />
-        {/* 🔑 Personal Credential Vault Modal */}
+        {/* Personal Credential Vault Modal */}
         <CredentialVaultModal
           isOpen={showVaultModal}
           onClose={() => setShowVaultModal(false)}

@@ -116,7 +116,7 @@ export class Executor {
    */
   private checkTaskCompletion(planOutput: AgentOutput<PlannerOutput> | null): boolean {
     if (planOutput?.result?.done) {
-      logger.info('✅ Planner confirms task completion');
+      logger.info('Planner confirms task completion');
       if (planOutput.result.final_answer) {
         this.context.finalAnswer = planOutput.result.final_answer;
       }
@@ -131,7 +131,7 @@ export class Executor {
    * @returns {Promise<void>}
    */
   async execute(): Promise<void> {
-    logger.info(`🚀 Executing task: ${this.tasks[this.tasks.length - 1]}`);
+    logger.info(`Executing task: ${this.tasks[this.tasks.length - 1]}`);
 
     // PrivacyShield: Load user's encrypted credentials into SecureVault for token resolution
     try {
@@ -162,7 +162,7 @@ export class Executor {
           maxSteps: context.options.maxSteps,
         };
 
-        logger.info(`🔄 Step ${step + 1} / ${allowedMaxSteps}`);
+        logger.info(`Step ${step + 1} / ${allowedMaxSteps}`);
         if (await this.shouldStop()) {
           break;
         }
@@ -183,7 +183,7 @@ export class Executor {
 
         // If navigator indicates completion, the next periodic planner run will validate it
         if (navigatorDone) {
-          logger.info('🔄 Navigator indicates completion - will be validated by next planner run');
+          logger.info('Navigator indicates completion - will be validated by next planner run');
         }
       }
 
@@ -198,7 +198,7 @@ export class Executor {
         // Track task completion
         void analytics.trackTaskComplete(this.context.taskId);
       } else if (step >= allowedMaxSteps) {
-        logger.error('❌ Task failed: Max steps reached');
+        logger.error('Task failed: Max steps reached');
         this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_FAIL, t('exec_errors_maxStepsReached'));
 
         // Track task failure with specific error category
@@ -402,7 +402,7 @@ export class Executor {
       if (history.history.length === 0) {
         throw new Error(t('exec_replay_historyEmpty'));
       }
-      logger.debug(`🔄 Replaying history: ${JSON.stringify(history, null, 2)}`);
+      logger.debug(`Replaying history: ${JSON.stringify(history, null, 2)}`);
       this.context.emitEvent(Actors.SYSTEM, ExecutionState.TASK_START, this.context.taskId);
 
       for (let i = 0; i < history.history.length; i++) {

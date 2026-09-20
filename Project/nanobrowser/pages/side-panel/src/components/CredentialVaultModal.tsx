@@ -9,7 +9,18 @@ import {
   FiEyeOff,
   FiCheck,
   FiAlertTriangle,
+  FiKey,
+  FiFileText,
+  FiHash,
+  FiCreditCard,
+  FiPhone,
+  FiMail,
+  FiBriefcase,
+  FiAtSign,
+  FiGlobe,
+  FiSlash,
 } from 'react-icons/fi';
+import type { IconType } from 'react-icons';
 
 // ─── Types (mirrored from credentialStore — no direct import to keep UI bundle clean) ─
 type TokenType =
@@ -46,18 +57,18 @@ interface CredentialVaultModalProps {
 }
 
 // ─── Token type metadata ───────────────────────────────────────────────────────
-const TOKEN_META: Record<TokenType, { label: string; placeholder: string; icon: string }> = {
-  CREDENTIAL:    { label: 'Password / PIN',     placeholder: 'Enter your password',       icon: '🔑' },
-  IDENTITY_ID:   { label: 'Aadhaar Number',     placeholder: '1234 5678 9012',             icon: '🪪' },
-  TAX_ID:        { label: 'PAN Card',           placeholder: 'ABCDE1234F',                icon: '📋' },
-  OTP:           { label: 'OTP / Passcode',     placeholder: '6-digit OTP',               icon: '🔢' },
-  CARD_NUMBER:   { label: 'Card Number',        placeholder: '4111 1111 1111 1111',        icon: '💳' },
-  CARD_SECURITY: { label: 'CVV / Card Security',placeholder: '3-digit CVV',               icon: '🛡️' },
-  PHONE:         { label: 'Phone Number',       placeholder: '+91 98765 43210',            icon: '📱' },
-  EMAIL:         { label: 'Email Address',      placeholder: 'you@example.com',            icon: '📧' },
-  BANK_ACCOUNT:  { label: 'Bank Account No.',   placeholder: '12-digit account number',   icon: '🏦' },
-  UPI_ID:        { label: 'UPI ID',             placeholder: 'name@upi',                  icon: '💸' },
-  IFSC:          { label: 'IFSC Code',          placeholder: 'HDFC0001234',               icon: '🏛️' },
+const TOKEN_META: Record<TokenType, { label: string; placeholder: string; Icon: IconType }> = {
+  CREDENTIAL:    { label: 'Password / PIN',      placeholder: 'Enter your password',        Icon: FiKey },
+  IDENTITY_ID:   { label: 'Aadhaar Number',      placeholder: '1234 5678 9012',              Icon: FiFileText },
+  TAX_ID:        { label: 'PAN Card',            placeholder: 'ABCDE1234F',                 Icon: FiFileText },
+  OTP:           { label: 'OTP / Passcode',      placeholder: '6-digit OTP',                Icon: FiHash },
+  CARD_NUMBER:   { label: 'Card Number',         placeholder: '4111 1111 1111 1111',         Icon: FiCreditCard },
+  CARD_SECURITY: { label: 'CVV / Card Security', placeholder: '3-digit CVV',                Icon: FiShield },
+  PHONE:         { label: 'Phone Number',        placeholder: '+91 98765 43210',             Icon: FiPhone },
+  EMAIL:         { label: 'Email Address',       placeholder: 'you@example.com',             Icon: FiMail },
+  BANK_ACCOUNT:  { label: 'Bank Account No.',    placeholder: '12-digit account number',    Icon: FiBriefcase },
+  UPI_ID:        { label: 'UPI ID',              placeholder: 'name@upi',                   Icon: FiAtSign },
+  IFSC:          { label: 'IFSC Code',           placeholder: 'HDFC0001234',                Icon: FiFileText },
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -206,12 +217,12 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
           <button
             className={`vault-tab ${activeTab === 'vault' ? 'active' : ''}`}
             onClick={() => setActiveTab('vault')}>
-            🔑 My Vault
+            <FiKey size={15} aria-hidden="true" /> My Vault
           </button>
           <button
             className={`vault-tab ${activeTab === 'trust' ? 'active' : ''}`}
             onClick={() => setActiveTab('trust')}>
-            🛡️ Trust Proof
+            <FiShield size={15} aria-hidden="true" /> Trust Proof
           </button>
         </div>
 
@@ -247,7 +258,9 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
               <div className="vault-entries">
                 {entries.map(entry => (
                   <div key={entry.id} className="vault-entry">
-                    <span className="vault-entry-icon">{TOKEN_META[entry.tokenType]?.icon ?? '🔒'}</span>
+                    <span className="vault-entry-icon">
+                      {React.createElement(TOKEN_META[entry.tokenType]?.Icon ?? FiLock, { size: 16, 'aria-hidden': true })}
+                    </span>
                     <div className="vault-entry-info">
                       <span className="vault-entry-label">{entry.label}</span>
                       <span className="vault-entry-meta">
@@ -290,7 +303,7 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
                     className="vault-input">
                     {(Object.keys(TOKEN_META) as TokenType[]).map(t => (
                       <option key={t} value={t}>
-                        {TOKEN_META[t].icon} {TOKEN_META[t].label}
+                        {TOKEN_META[t].label}
                       </option>
                     ))}
                   </select>
@@ -315,7 +328,7 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
                   </div>
                 </div>
                 <div className="vault-form-info">
-                  🔒 This value will be encrypted with AES-256 and stored only on your device.
+                  <FiLock size={14} aria-hidden="true" /> This value will be encrypted with AES-256 and stored only on your device.
                   The AI agent will only see <strong>{'<'}{formTokenType}{'>'}</strong>, never the real value.
                 </div>
                 <div className="vault-form-actions">
@@ -328,7 +341,7 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
                     className="vault-btn-primary"
                     onClick={handleSave}
                     disabled={isSaving}>
-                    {isSaving ? 'Saving…' : '🔒 Save Encrypted'}
+                    {isSaving ? 'Saving…' : <><FiLock size={14} aria-hidden="true" /> Save Encrypted</>}
                   </button>
                 </div>
               </div>
@@ -381,19 +394,19 @@ export const CredentialVaultModal: React.FC<CredentialVaultModalProps> = ({
 
             <div className="trust-proof-grid">
               <div className="trust-proof-card">
-                <span className="trust-proof-icon">🌐</span>
+                <FiGlobe className="trust-proof-icon" aria-hidden="true" />
                 <strong>Server receives</strong>
                 <code>{'<CREDENTIAL>'}</code>
                 <span>Semantic token only</span>
               </div>
               <div className="trust-proof-card trust-proof-card-red">
-                <span className="trust-proof-icon">🚫</span>
+                <FiSlash className="trust-proof-icon" aria-hidden="true" />
                 <strong>Server NEVER sees</strong>
                 <code>MyBankPass@123</code>
                 <span>Real value blocked client-side</span>
               </div>
               <div className="trust-proof-card trust-proof-card-green">
-                <span className="trust-proof-icon">✅</span>
+                <FiCheck className="trust-proof-icon" aria-hidden="true" />
                 <strong>DOM filled with</strong>
                 <code>MyBankPass@123</code>
                 <span>Token resolved locally</span>

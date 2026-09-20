@@ -11,7 +11,7 @@
  * Flow:
  *   AI returns → { action: "type", value: "<IDENTITY_ID>" }
  *   resolveAction() → { action: "type", value: "123456789012" }  ← real
- *   DOM → actual value typed into field ✅
+ *   DOM → actual value typed into field
  */
 
 import { SecureVault } from './secureVault';
@@ -77,4 +77,3 @@ export const TokenResolver = {
   resolveAction,
   resolveActions,
 };
-

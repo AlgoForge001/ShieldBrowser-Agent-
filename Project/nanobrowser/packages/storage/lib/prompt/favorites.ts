@@ -5,17 +5,17 @@ import type { BaseStorage } from '../base/types';
 // Template data
 const defaultFavoritePrompts = [
   {
-    title: '🛡️ Test Privacy Shield on Form',
+    title: 'Test Privacy Shield on Form',
     content:
       'Navigate to https://example.com or any test login page and verify that sensitive PII fields like passwords, phone numbers, and identity numbers are masked locally before reasoning.',
   },
   {
-    title: '📚 Explore AI Papers',
+    title: 'Explore AI Papers',
     content:
       '- Go to https://huggingface.co/papers and click through each of the first 3 papers.\n- For each paper:\n  - Record the title, URL and upvotes\n  - Summarise the abstract section\n- Finally, compile together a summary of all 3 papers, ranked by upvotes',
   },
   {
-    title: '⚡ Autonomous Web Research',
+    title: 'Autonomous Web Research',
     content:
       'Search for the latest developments in On-Device AI perception and privacy-preserving vision models, and synthesize the key findings into bullet points.',
   },

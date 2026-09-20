@@ -188,7 +188,7 @@ export class VisionPipeline {
           })),
         );
         logger.info(
-          `[EgressSigner] 🛡️ Frame signed with ECDSA P-256 (hash: ${signedManifest.frameHash.slice(0, 12)}..., nonce: ${signedManifest.nonce})`,
+          `[EgressSigner] Frame signed with ECDSA P-256 (hash: ${signedManifest.frameHash.slice(0, 12)}..., nonce: ${signedManifest.nonce})`,
         );
 
         // Optional receipt ping to verify-manifest endpoint (manifest-aware server)

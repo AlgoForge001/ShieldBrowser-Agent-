@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { FaMicrophone } from 'react-icons/fa';
+import { FiPaperclip, FiX } from 'react-icons/fi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { t } from '@extension/i18n';
 
@@ -103,7 +104,7 @@ export default function ChatInput({
             : `<nano_attached_files>${fileContents}</nano_attached_files>`;
 
           // Create display version with only filenames (for UI)
-          const fileList = attachedFiles.map(file => `📎 ${file.name}`).join('\n');
+          const fileList = attachedFiles.map(file => `Attachment: ${file.name}`).join('\n');
           displayContent = trimmedText ? `${trimmedText}\n\n${fileList}` : fileList;
         }
 
@@ -202,7 +203,7 @@ export default function ChatInput({
                 className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
                   isDarkMode ? 'bg-slate-700 text-gray-300' : 'bg-gray-200 text-gray-700'
                 }`}>
-                <span className="text-xs">📎</span>
+                <FiPaperclip className="size-3" aria-hidden="true" />
                 <span className="max-w-[150px] truncate">{file.name}</span>
                 <button
                   type="button"
@@ -211,7 +212,7 @@ export default function ChatInput({
                     isDarkMode ? 'hover:bg-slate-600' : 'hover:bg-gray-300'
                   }`}
                   aria-label={`Remove ${file.name}`}>
-                  <span className="text-xs">✕</span>
+                  <FiX className="size-3" aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -258,7 +259,7 @@ export default function ChatInput({
                     ? 'text-gray-400 hover:bg-slate-700 hover:text-gray-200'
                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
               }`}>
-              <span className="text-lg">📎</span>
+              <FiPaperclip className="size-4" aria-hidden="true" />
             </button>
 
             {/* Hidden file input */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiShield, FiX, FiCheckCircle, FiLock, FiAlertTriangle, FiActivity } from 'react-icons/fi';
+import { FiShield, FiX, FiCheckCircle, FiLock, FiAlertTriangle, FiActivity, FiSearch } from 'react-icons/fi';
 
 interface PrivacyShieldModalProps {
   isOpen: boolean;
@@ -53,7 +53,8 @@ export const PrivacyShieldModal: React.FC<PrivacyShieldModalProps> = ({
             <div className={`status-indicator-dot ${pipelineActive ? 'scanning' : 'online'}`}></div>
             <div className="status-info">
               <span className="status-label">
-                {pipelineActive ? '🔍 Scanning Page...' : 'Privacy Shield Active'}
+                {pipelineActive && <FiSearch className="mr-1 inline-block size-4" aria-hidden="true" />}
+                {pipelineActive ? 'Scanning Page...' : 'Privacy Shield Active'}
               </span>
               <span className="status-sub">
                 {pipelineActive

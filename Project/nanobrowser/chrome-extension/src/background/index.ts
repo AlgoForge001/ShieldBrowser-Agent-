@@ -50,7 +50,7 @@ async function runVisionScanForTask(task: string, port: chrome.runtime.Port): Pr
       if (activeTab?.windowId) {
         const dataUrl = await chrome.tabs.captureVisibleTab(activeTab.windowId, { format: 'jpeg', quality: 80 });
         preScreenshot = dataUrl.replace(/^data:[^;]+;base64,/, '');
-        logger.info('[AutoVision] Screenshot captured via captureVisibleTab ✅');
+        logger.info('[AutoVision] Screenshot captured via captureVisibleTab');
       }
     } catch (screenshotErr) {
       logger.warning('[AutoVision] captureVisibleTab failed, pipeline will try Puppeteer:', screenshotErr);
@@ -201,7 +201,7 @@ chrome.runtime.onConnect.addListener(port => {
 
             logger.info('new_task', message.tabId, message.task);
 
-            // 🛡️ Auto-fire Vision Pipeline on every task (non-blocking).
+            // Auto-fire Vision Pipeline on every task (non-blocking).
             // Runs in parallel with the text LLM agent — does not delay execution.
             // skipExecution=true so vision scan only detects/redacts; text agent handles DOM actions.
             runVisionScanForTask(message.task, port).catch(err =>
@@ -222,7 +222,7 @@ chrome.runtime.onConnect.addListener(port => {
 
             logger.info('follow_up_task', message.tabId, message.task);
 
-            // 🛡️ Auto-fire Vision Pipeline on every follow-up task too (non-blocking).
+            // Auto-fire Vision Pipeline on every follow-up task too (non-blocking).
             runVisionScanForTask(message.task, port).catch(err =>
               logger.warning('[AutoVision] Unhandled vision scan error (follow-up):', String(err))
             );
@@ -370,7 +370,7 @@ chrome.runtime.onConnect.addListener(port => {
                 if (activeTab?.windowId) {
                   const dataUrl = await chrome.tabs.captureVisibleTab(activeTab.windowId, { format: 'jpeg', quality: 80 });
                   preScreenshot = dataUrl.replace(/^data:[^;]+;base64,/, '');
-                  logger.info('[vision_task] Screenshot captured via captureVisibleTab ✅');
+                  logger.info('[vision_task] Screenshot captured via captureVisibleTab');
                 }
               } catch (screenshotErr) {
                 logger.warning('[vision_task] captureVisibleTab failed, pipeline will try Puppeteer:', screenshotErr);

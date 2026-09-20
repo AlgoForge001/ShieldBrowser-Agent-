@@ -580,7 +580,7 @@ export class NavigatorAgent extends BaseAgent<z.ZodType, NavigatorResult> {
 
     const { parsedOutput, goal, actionsToReplay } = parsedData;
     replayLogger.info(`Replaying step ${stepIndex + 1}/${totalSteps}: goal: ${goal}`);
-    replayLogger.debug(`🔄 Replaying actions:`, actionsToReplay);
+    replayLogger.debug(`Replaying actions:`, actionsToReplay);
 
     // Try to execute the step with retries
     let retryCount = 0;
