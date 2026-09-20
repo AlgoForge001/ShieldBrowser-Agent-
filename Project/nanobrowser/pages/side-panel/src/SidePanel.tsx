@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FiSettings, FiShield, FiKey } from 'react-icons/fi';
+import { FiSettings, FiShield, FiKey, FiAlertTriangle, FiCheckCircle, FiCpu, FiLock, FiSlash, FiGlobe } from 'react-icons/fi';
 import { PiPlusBold } from 'react-icons/pi';
 import { GrHistory } from 'react-icons/gr';
 import { type Message, Actors, chatHistoryStore, agentModelStore, generalSettingsStore } from '@extension/storage';
@@ -1189,7 +1189,7 @@ const SidePanel = () => {
             <div className="guardian-dialog">
               {/* Header */}
               <div className="guardian-header">
-                <span className="guardian-icon">🛡️</span>
+                <FiShield className="guardian-icon" size={20} />
                 <div>
                   <h3 className="guardian-title">Live Action Guardian</h3>
                   <p className="guardian-subtitle">Drift detected before action execution</p>
@@ -1209,7 +1209,10 @@ const SidePanel = () => {
 
               {/* Drift table */}
               <div className="guardian-drift-section">
-                <p className="guardian-drift-heading">⚠️ Live DOM Drift Detected ({guardianAlert.drifts.length} field{guardianAlert.drifts.length !== 1 ? 's' : ''})</p>
+                <p className="guardian-drift-heading">
+                  <FiAlertTriangle size={14} className="inline mr-1" />
+                  Live DOM Drift Detected ({guardianAlert.drifts.length} field{guardianAlert.drifts.length !== 1 ? 's' : ''})
+                </p>
                 <div className="guardian-drift-list">
                   {guardianAlert.drifts.map((drift, i) => (
                     <div key={i} className={`guardian-drift-item ${drift.severity === 'critical' ? 'drift-critical' : 'drift-warning'}`}>
@@ -1246,7 +1249,8 @@ const SidePanel = () => {
               {/* Blocked log count */}
               {guardianBlocked.length > 0 && (
                 <p className="guardian-blocked-log">
-                  🛡 {guardianBlocked.length} action{guardianBlocked.length !== 1 ? 's' : ''} blocked this session
+                  <FiShield size={12} className="inline mr-1" />
+                  {guardianBlocked.length} action{guardianBlocked.length !== 1 ? 's' : ''} blocked this session
                 </p>
               )}
             </div>
@@ -1284,42 +1288,59 @@ const SidePanel = () => {
           </div>
         ) : (
           <>
-            {/* Show loading state while checking model configuration */}
             {hasConfiguredModels === null && (
-              <div
-                className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
+              <div className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
                 <div className="text-center">
-                  <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-2 border-sky-400 border-t-transparent"></div>
-                  <p>{t('status_checkingConfig')}</p>
+                  <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
+                  <p className="text-sm font-medium">{t('status_checkingConfig')}</p>
+                  <p className="mt-1 text-xs opacity-60">Verifying your model setup…</p>
                 </div>
               </div>
             )}
 
             {/* Show setup message when no models are configured */}
             {hasConfiguredModels === false && (
-              <div
-                className={`flex flex-1 items-center justify-center p-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                <div className="max-w-md text-center">
-                  <img src="/icon-128.png" alt="ShieldBrowser Logo" className="mx-auto mb-4 size-14 object-contain drop-shadow-md" />
-                  <h3 className={`mb-2 text-lg font-bold tracking-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+              <div className={`flex flex-1 flex-col items-center justify-center gap-5 px-6 py-8 ${isDarkMode ? 'text-sky-300' : 'text-sky-700'}`}>
+                {/* Logo */}
+                <div className="flex flex-col items-center gap-2">
+                  <img src="/icon-128.png" alt="ShieldBrowser Logo" className="size-14 object-contain drop-shadow-md" />
+                  <h3 className={`text-lg font-bold tracking-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                     {t('welcome_title')}
                   </h3>
-                  <p className="mb-4 text-sm opacity-90">{t('welcome_instruction')}</p>
-                  <button
-                    onClick={() => chrome.runtime.openOptionsPage()}
-                    className={`my-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 font-medium shadow-md transition-all hover:scale-105 ${
-                      isDarkMode ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    }`}>
-                    <FiSettings size={16} />
-                    {t('welcome_openSettings')}
-                  </button>
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs opacity-75">
-                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-500">
-                      <FiShield size={12} />
-                      On-Device Vision & Privacy Filter
-                    </span>
-                  </div>
+                  <p className="text-center text-sm opacity-80">{t('welcome_instruction')}</p>
                 </div>
+
+                {/* Feature highlights */}
+                <div className="w-full space-y-2">
+                  {([
+                    { Icon: FiShield,  label: 'On-device PII redaction before any AI sees it' },
+                    { Icon: FiKey,     label: 'Credential Vault — never sent to the AI' },
+                    { Icon: FiCpu,     label: 'AI Browser Agent controlled entirely by you' },
+                    { Icon: FiLock,    label: 'Privacy Guardian blocks suspicious actions' },
+                  ] as const).map(({ Icon, label }) => (
+                    <div
+                      key={label}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
+                        isDarkMode ? 'bg-slate-800/60 text-slate-300' : 'bg-white/70 text-slate-700'
+                      } shadow-sm`}>
+                      <Icon size={15} className="flex-shrink-0 text-indigo-500" />
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <button
+                  onClick={() => chrome.runtime.openOptionsPage()}
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 font-semibold text-white shadow-md transition-all hover:scale-105 hover:bg-indigo-700 hover:shadow-lg active:scale-100">
+                  <FiSettings size={16} />
+                  {t('welcome_openSettings')}
+                </button>
+
+                <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500 opacity-80">
+                  <FiShield size={12} />
+                  On-Device Vision &amp; Privacy Filter
+                </p>
               </div>
             )}
 
@@ -1328,8 +1349,7 @@ const SidePanel = () => {
               <>
                 {messages.length === 0 && (
                   <>
-                    <div
-                      className={`border-t ${isDarkMode ? 'border-sky-900' : 'border-sky-100'} mb-2 p-2 shadow-sm backdrop-blur-sm`}>
+                    <div className={`border-t ${isDarkMode ? 'border-sky-900' : 'border-sky-100'} p-2 shadow-sm backdrop-blur-sm`}>
                       <ChatInput
                         onSendMessage={handleSendMessage}
                         onStopTask={handleStopTask}
