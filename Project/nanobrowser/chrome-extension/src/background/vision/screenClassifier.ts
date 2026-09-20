@@ -66,7 +66,7 @@ function scheduleClipLoad(): void {
       chrome.runtime.sendMessage({ type: 'PRELOAD_CLIP' }).then(response => {
         if (response?.ready) {
           clipModelReady = true;
-          logger.info('[ScreenClassifier] CLIP model loaded and cached ✅');
+          logger.info('[ScreenClassifier] CLIP model loaded and cached');
         }
       }).catch(() => {
         // Offscreen doc not ready yet — will retry on next call

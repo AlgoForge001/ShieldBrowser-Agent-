@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { FaMicrophone } from 'react-icons/fa';
+import { FiPaperclip, FiX } from 'react-icons/fi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { t } from '@extension/i18n';
 
@@ -67,12 +68,14 @@ export default function ChatInput({
     }
   }, [setContent]);
 
-  // Initial resize when component mounts
+  // Initial resize when component mounts + auto-focus
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
       textarea.style.height = `${Math.min(textarea.scrollHeight, 100)}px`;
+      // Auto-focus so user can type immediately
+      if (!disabled) textarea.focus();
     }
   }, []);
 
@@ -101,7 +104,7 @@ export default function ChatInput({
             : `<nano_attached_files>${fileContents}</nano_attached_files>`;
 
           // Create display version with only filenames (for UI)
-          const fileList = attachedFiles.map(file => `📎 ${file.name}`).join('\n');
+          const fileList = attachedFiles.map(file => `Attachment: ${file.name}`).join('\n');
           displayContent = trimmedText ? `${trimmedText}\n\n${fileList}` : fileList;
         }
 
@@ -200,7 +203,7 @@ export default function ChatInput({
                 className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
                   isDarkMode ? 'bg-slate-700 text-gray-300' : 'bg-gray-200 text-gray-700'
                 }`}>
-                <span className="text-xs">📎</span>
+                <FiPaperclip className="size-3" aria-hidden="true" />
                 <span className="max-w-[150px] truncate">{file.name}</span>
                 <button
                   type="button"
@@ -209,7 +212,7 @@ export default function ChatInput({
                     isDarkMode ? 'hover:bg-slate-600' : 'hover:bg-gray-300'
                   }`}
                   aria-label={`Remove ${file.name}`}>
-                  <span className="text-xs">✕</span>
+                  <FiX className="size-3" aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -223,8 +226,8 @@ export default function ChatInput({
           onKeyDown={handleKeyDown}
           disabled={disabled}
           aria-disabled={disabled}
-          rows={5}
-          className={`w-full resize-none border-none p-2 focus:outline-none ${
+          rows={3}
+          className={`w-full resize-none border-none p-2 text-sm focus:outline-none ${
             disabled
               ? isDarkMode
                 ? 'cursor-not-allowed bg-slate-800 text-gray-400'
@@ -256,7 +259,7 @@ export default function ChatInput({
                     ? 'text-gray-400 hover:bg-slate-700 hover:text-gray-200'
                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
               }`}>
-              <span className="text-lg">📎</span>
+              <FiPaperclip className="size-4" aria-hidden="true" />
             </button>
 
             {/* Hidden file input */}
@@ -304,7 +307,7 @@ export default function ChatInput({
             <button
               type="button"
               onClick={onStopTask}
-              className="rounded-md bg-red-500 px-3 py-1 text-white transition-colors hover:bg-red-600">
+              className="rounded-md bg-red-500 px-3 py-1 text-sm text-white transition-colors hover:bg-red-600">
               {t('chat_buttons_stop')}
             </button>
           ) : historicalSessionId ? (
@@ -313,7 +316,7 @@ export default function ChatInput({
               onClick={handleReplay}
               disabled={!historicalSessionId}
               aria-disabled={!historicalSessionId}
-              className={`rounded-md bg-green-500 px-3 py-1 text-white transition-colors hover:enabled:bg-green-600 ${!historicalSessionId ? 'cursor-not-allowed opacity-50' : ''}`}>
+              className={`rounded-md bg-green-500 px-3 py-1 text-sm text-white transition-colors hover:enabled:bg-green-600 ${!historicalSessionId ? 'cursor-not-allowed opacity-50' : ''}`}>
               {t('chat_buttons_replay')}
             </button>
           ) : (
@@ -321,11 +324,18 @@ export default function ChatInput({
               type="submit"
               disabled={isSendButtonDisabled}
               aria-disabled={isSendButtonDisabled}
-              className={`rounded-md bg-[#19C2FF] px-3 py-1 text-white transition-colors hover:enabled:bg-[#0073DC] ${isSendButtonDisabled ? 'cursor-not-allowed opacity-50' : ''}`}>
+              title="Send message (Enter)"
+              className={`rounded-md bg-[#19C2FF] px-3 py-1 text-sm text-white transition-all hover:enabled:bg-[#0073DC] hover:enabled:shadow-md ${isSendButtonDisabled ? 'cursor-not-allowed opacity-50' : ''}`}>
               {t('chat_buttons_send')}
             </button>
           )}
         </div>
+        {/* Keyboard hint */}
+        {!showStopButton && !historicalSessionId && (
+          <p className={`px-2 pb-1 text-right text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+            Enter to send &nbsp;·&nbsp; Shift+Enter for newline
+          </p>
+        )}
       </div>
     </form>
   );

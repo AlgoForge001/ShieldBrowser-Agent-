@@ -20,7 +20,7 @@ async def verify_manifest(manifest: SignedManifest) -> ManifestReceiptResponse:
     Proves that visual PII redaction occurred client-side before egress.
     """
     logger.info(
-        "[AUDIT-GATEWAY] 🛡️ Received Egress Attestation Manifest: "
+        "[AUDIT-GATEWAY] Received Egress Attestation Manifest: "
         "timestamp=%s nonce=%s regions=%d frame_hash=%s... algorithm=%s",
         manifest.timestamp,
         manifest.nonce,

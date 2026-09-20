@@ -1165,6 +1165,26 @@
       animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
       box-shadow: 0 8px 24px rgba(5,150,105,0.35);
     }
+    .external-link-icon {
+      width: 0.9em;
+      height: 0.9em;
+      margin-left: 0.2em;
+      vertical-align: -0.08em;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .wizard-done-icon svg {
+      width: 52px;
+      height: 52px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
     .wizard-done-title {
       font-family: var(--font-serif);
       font-size: 1.7rem;
@@ -1256,7 +1276,7 @@
         <li><a href="#particles-zone">Visual Perception</a></li>
         <li><a href="#features">Architecture</a></li>
         <li><a href="#simulation">Privacy Shield</a></li>
-        <li><a href="demo.html" target="_blank" style="color: #4f46e5; font-weight: 700;">Live Benchmark Demo ↗</a></li>
+        <li><a href="demo.html" target="_blank" style="color: #4f46e5; font-weight: 700;">Live Benchmark Demo<svg class="external-link-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7"/><path d="m10 14 11-11"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a></li>
       </ul>
     </nav>
 
@@ -1519,7 +1539,7 @@
           <span>Download Extension (.zip)</span>
         </a>
         <a href="https://github.com/AlgoForge001/ShieldBrowser-Agent-" target="_blank" class="btn-ghost" style="padding: 14px 24px; font-size: 1rem;">
-          <span>Source Code ↗</span>
+          <span>Source Code<svg class="external-link-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7"/><path d="m10 14 11-11"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></span>
         </a>
       </div>
     </div>
@@ -1638,12 +1658,12 @@
         <!-- Pane 3: Done -->
         <div class="wizard-pane" id="wpane3">
           <div style="padding: 16px 0 8px;">
-            <div class="wizard-done-icon">🛡️</div>
+            <div class="wizard-done-icon"><svg viewBox="0 0 24 24" aria-label="Protection active" role="img"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
             <div class="wizard-done-title">ShieldBrowser is Active!</div>
             <div class="wizard-done-sub">The extension is now protecting your browser. Click the ShieldBrowser icon in your toolbar to start your first private session.</div>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
               <button class="btn-primary btn-emerald" style="cursor:pointer; border:none; padding:11px 24px; font-size:0.9rem;" onclick="closeWizard()">Start Browsing Privately</button>
-              <a href="https://github.com/AlgoForge001/ShieldBrowser-Agent-" target="_blank" class="btn-ghost" style="padding:10px 20px; font-size:0.88rem;">View Docs ↗</a>
+              <a href="https://github.com/AlgoForge001/ShieldBrowser-Agent-" target="_blank" class="btn-ghost" style="padding:10px 20px; font-size:0.88rem;">View Docs<svg class="external-link-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7"/><path d="m10 14 11-11"/><path d="M21 14v5a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg></a>
             </div>
           </div>
         </div>

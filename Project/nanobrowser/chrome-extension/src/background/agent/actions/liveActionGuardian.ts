@@ -303,7 +303,7 @@ export async function guardianCheck(
   const drifts = detectDrift(_guardedIntent, snapshot);
 
   if (drifts.length === 0) {
-    logger.info('[Guardian] ✅ No drift detected — action is safe');
+    logger.info('[Guardian] No drift detected — action is safe');
     return {
       safe: true,
       drifts: [],
@@ -313,9 +313,9 @@ export async function guardianCheck(
 
   // Drift detected — emit alert and wait for user confirmation
   const criticalDrifts = drifts.filter(d => d.severity === 'critical');
-  const summary = `⚠️ ${drifts.length} drift(s) detected: ${drifts.map(d => `${d.field} changed (${d.expected} → ${d.found})`).join(', ')}`;
+  const summary = `${drifts.length} drift(s) detected: ${drifts.map(d => `${d.field} changed (${d.expected} → ${d.found})`).join(', ')}`;
 
-  logger.warning(`[Guardian] 🚨 DRIFT DETECTED: ${summary}`);
+  logger.warning(`[Guardian] DRIFT DETECTED: ${summary}`);
 
   const checkId = `guard-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -337,7 +337,7 @@ export async function guardianCheck(
 
   // Auto-block critical drifts immediately (no user confirmation needed)
   if (criticalDrifts.length > 0) {
-    logger.warning('[Guardian] 🚫 CRITICAL drift — action auto-blocked');
+    logger.warning('[Guardian] CRITICAL drift — action auto-blocked');
     return {
       safe: false,
       drifts,
@@ -352,7 +352,7 @@ export async function guardianCheck(
     setTimeout(() => {
       if (_pendingConfirmations.has(checkId)) {
         _pendingConfirmations.delete(checkId);
-        logger.warning('[Guardian] ⏰ Confirmation timeout — auto-blocking action');
+        logger.warning('[Guardian] Confirmation timeout — auto-blocking action');
         resolve(false);
       }
     }, timeoutMs);

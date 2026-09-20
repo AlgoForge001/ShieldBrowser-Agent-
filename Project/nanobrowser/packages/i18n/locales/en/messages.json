@@ -176,7 +176,7 @@
     "message": "Requesting microphone permission..."
   },
   "permissions_microphone_grantedSuccess": {
-    "message": "✅ Microphone permission granted! You can now use voice input."
+    "message": "Microphone permission granted. You can now use voice input."
   },
   "permissions_microphone_grantedButton": {
     "message": "Permission Granted"
@@ -191,7 +191,7 @@
     "message": "No microphone found. Please check your audio devices."
   },
   "permissions_microphone_alreadyGranted": {
-    "message": "✅ Microphone permission already granted!"
+    "message": "Microphone permission already granted."
   },
   "permissions_microphone_alreadyGrantedButton": {
     "message": "Permission Already Granted"

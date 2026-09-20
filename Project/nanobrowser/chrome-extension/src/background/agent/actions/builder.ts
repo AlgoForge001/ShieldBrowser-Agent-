@@ -356,7 +356,7 @@ export class ActionBuilder {
 
     //   try {
     //     const output = await this.extractorLLM.invoke(prompt);
-    //     const msg = `📄  Extracted from page\n: ${output.content}\n`;
+    //     const msg = `Extracted from page\n: ${output.content}\n`;
     //     return new ActionResult({
     //       extractedContent: msg,
     //       includeInMemory: true,

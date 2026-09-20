@@ -64,7 +64,7 @@ export async function executeActions(
 
       if (!guardResult.safe && !guardResult.skipped) {
         logger.warning(
-          `[Guardian] 🚫 Action [${action.type}] blocked by Guardian: ${guardResult.summary}`,
+          `[Guardian] Action [${action.type}] blocked by Guardian: ${guardResult.summary}`,
         );
         result.actionsBlocked++;
         result.errors.push(`[GUARDIAN_BLOCKED] ${action.type}: ${guardResult.summary}`);
@@ -73,7 +73,7 @@ export async function executeActions(
 
       if (!guardResult.skipped && guardResult.drifts.length > 0) {
         logger.info(
-          `[Guardian] ⚠️ Action [${action.type}] has warnings but user approved: ${guardResult.summary}`,
+          `[Guardian] Action [${action.type}] has warnings but user approved: ${guardResult.summary}`,
         );
       }
       // ─────────────────────────────────────────────────────────────────────
